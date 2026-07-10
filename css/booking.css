@@ -78,6 +78,28 @@
 .trip-card-meta span { display: flex; align-items: center; gap: 4px; }
 .trip-empty { text-align: center; padding: 40px 20px; color: var(--gray-600); font-size: 0.9rem; }
 
+/* Time slot chips */
+.time-slot-chip {
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1.5px solid var(--gray-200);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: var(--secondary);
+    color: var(--gray-600);
+    transition: all 0.15s ease;
+}
+.time-slot-chip:hover {
+    border-color: var(--accent);
+    background: rgba(245,166,35,0.06);
+}
+.time-slot-chip.active {
+    background: var(--primary);
+    color: var(--secondary);
+    border-color: var(--primary);
+}
+
 .seat-selector { display: flex; align-items: center; gap: 14px; }
 .seat-selector button {
     width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--gray-200);
