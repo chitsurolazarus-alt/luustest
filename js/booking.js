@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupMapClicks();
     await loadTimeSlots();
     setupUIHandlers();
+    
+    // Trigger initial load
+    loadTripsForDateAndTime();
 });
 
 // Map click handler: first click sets pickup, second sets dropoff, third click resets and starts over
@@ -104,7 +107,36 @@ async function loadTimeSlots() {
         return;
     }
 
-    renderTimeSlots(data || []);
+    // If no time slots exist, create default ones
+    if (!data || data.length === 0) {
+        await createDefaultTimeSlots();
+        const { data: newData } = await supabaseClient
+            .from('time_slots')
+            .select('*')
+            .eq('is_active', true)
+            .order('route')
+            .order('departure_time');
+        renderTimeSlots(newData || []);
+    } else {
+        renderTimeSlots(data);
+    }
+}
+
+async function createDefaultTimeSlots() {
+    const defaultSlots = [
+        { route: 'Gauteng-Limpopo', departure_time: '06:00', is_active: true },
+        { route: 'Gauteng-Limpopo', departure_time: '10:00', is_active: true },
+        { route: 'Gauteng-Limpopo', departure_time: '14:00', is_active: true },
+        { route: 'Gauteng-Limpopo', departure_time: '18:00', is_active: true },
+        { route: 'Limpopo-Gauteng', departure_time: '06:00', is_active: true },
+        { route: 'Limpopo-Gauteng', departure_time: '10:00', is_active: true },
+        { route: 'Limpopo-Gauteng', departure_time: '14:00', is_active: true },
+        { route: 'Limpopo-Gauteng', departure_time: '18:00', is_active: true }
+    ];
+    
+    for (const slot of defaultSlots) {
+        await supabaseClient.from('time_slots').insert([slot]);
+    }
 }
 
 function renderTimeSlots(slots) {
@@ -174,21 +206,17 @@ async function loadTripsForDateAndTime() {
         return;
     }
 
-    if (!BookingState.selectedTime) {
-        document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a departure time slot first.</div>';
-        return;
-    }
-
-    // Get the selected time slot to know the route
-    const { data: slotData } = await supabaseClient
-        .from('time_slots')
-        .select('route')
-        .eq('id', BookingState.selectedTime)
-        .single();
-
-    if (!slotData) {
-        document.getElementById('tripList').innerHTML = '<div class="trip-empty">Invalid time slot selected.</div>';
-        return;
+    // If no time slot selected, show all trips for the date
+    let routeFilter = null;
+    if (BookingState.selectedTime) {
+        const { data: slotData } = await supabaseClient
+            .from('time_slots')
+            .select('route')
+            .eq('id', BookingState.selectedTime)
+            .single();
+        if (slotData) {
+            routeFilter = slotData.route;
+        }
     }
 
     // Build the departure time range (the whole day of selected date)
@@ -197,15 +225,22 @@ async function loadTripsForDateAndTime() {
     const endDate = new Date(selectedDate);
     endDate.setHours(23, 59, 59, 999);
 
-    // Find trips for this route on the selected date
-    const { data, error } = await supabaseClient
+    // Build query
+    let query = supabaseClient
         .from('trips')
         .select('*, drivers(full_name, vehicle_model, vehicle_color, phone)')
-        .eq('route', slotData.route)
         .gte('departure_time', startDate.toISOString())
         .lte('departure_time', endDate.toISOString())
         .gt('available_seats', 0)
         .order('departure_time', { ascending: true });
+
+    if (routeFilter) {
+        query = query.eq('route', routeFilter);
+    } else if (BookingState.routeFilter !== 'all') {
+        query = query.eq('route', BookingState.routeFilter);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
         showToast('Could not load trips: ' + error.message, 'error');
@@ -285,21 +320,21 @@ function setupUIHandlers() {
             BookingState.selectedTime = null;
             document.getElementById('selectedTimeDisplay').textContent = 'None selected';
             document.getElementById('selectedTimeDisplay').style.color = 'var(--gray-400)';
-            document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a travel date and time slot.</div>';
-            document.getElementById('bookingFormCard').style.display = 'none';
             await loadTimeSlots();
+            loadTripsForDateAndTime();
         });
     });
 
-    // Date picker
-    document.getElementById('tripDate').addEventListener('change', () => {
+    // Date picker - set default to today
+    const dateInput = document.getElementById('tripDate');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('min', today);
+    dateInput.value = today;
+    
+    dateInput.addEventListener('change', () => {
         BookingState.selectedTrip = null;
         document.getElementById('bookingFormCard').style.display = 'none';
-        if (BookingState.selectedTime) {
-            loadTripsForDateAndTime();
-        } else {
-            document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a departure time slot first.</div>';
-        }
+        loadTripsForDateAndTime();
     });
 
     // Seat controls
