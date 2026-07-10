@@ -30,7 +30,7 @@
 <header class="booking-header">
     <div class="container">
         <h1>Book Your Shuttle Trip</h1>
-        <p>Select your travel date, choose a time slot, set your pickup and drop-off on the map, and confirm your seat.</p>
+        <p>Select your travel date and time slot, set your pickup and drop-off locations, then confirm via WhatsApp.</p>
     </div>
 </header>
 
@@ -71,7 +71,7 @@
     <div class="booking-panel">
 
         <div class="panel-card">
-            <h3>1. Choose a Route</h3>
+            <h3>1. Choose Your Route</h3>
             <div class="route-filter">
                 <button class="route-chip active" data-route="all">All Routes</button>
                 <button class="route-chip" data-route="Gauteng-Limpopo">Gauteng → Limpopo</button>
@@ -88,8 +88,8 @@
         </div>
 
         <div class="panel-card">
-            <h3>3. Choose Departure Time Slot</h3>
-            <p style="font-size:0.85rem; color:var(--gray-600); margin-bottom:12px;">Select a time slot. Available trips will appear below.</p>
+            <h3>3. Choose Departure Time</h3>
+            <p style="font-size:0.85rem; color:var(--gray-600); margin-bottom:12px;">Select a time slot for your trip.</p>
             <div id="timeSlotContainer">
                 <div class="trip-empty">Loading time slots...</div>
             </div>
@@ -99,28 +99,14 @@
         </div>
 
         <div class="panel-card">
-            <h3>4. Available Trips</h3>
-            <div class="trip-list" id="tripList">
-                <div class="trip-empty">Loading trips...</div>
-            </div>
-        </div>
-
-        <div class="panel-card" id="bookingFormCard" style="display:none;">
-            <h3>5. Confirm Your Booking</h3>
+            <h3>4. Trip Details</h3>
             <div class="form-group">
-                <label>Number of Seats</label>
+                <label>Number of Passengers</label>
                 <div class="seat-selector">
                     <button type="button" id="seatMinus">−</button>
                     <input type="number" id="seatCount" value="1" min="1" max="14" readonly>
                     <button type="button" id="seatPlus">+</button>
-                    <span style="font-size:0.82rem; color:var(--gray-600);" id="seatsAvailableLabel"></span>
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Payment Method</label>
-                <div class="payment-options">
-                    <div class="payment-option selected" data-method="cash">Cash<small>Pay the driver</small></div>
-                    <div class="payment-option" data-method="card">Card<small>Coming soon</small></div>
+                    <span style="font-size:0.82rem; color:var(--gray-600);">Max 14 seats</span>
                 </div>
             </div>
             <div class="form-group">
@@ -129,11 +115,18 @@
             </div>
 
             <div class="price-summary">
-                <div class="price-row"><span>Price per seat</span><span id="pricePerSeat">R0.00</span></div>
-                <div class="price-row"><span>Seats</span><span id="seatsSummary">1</span></div>
-                <div class="price-row total"><span>Total</span><span id="totalPrice">R0.00</span></div>
+                <div class="price-row"><span>Distance</span><span id="distanceDisplay">— km</span></div>
+                <div class="price-row"><span>Price per km</span><span>R2.50</span></div>
+                <div class="price-row"><span>Passengers</span><span id="passengerCount">1</span></div>
+                <div class="price-row total"><span>Total Estimated Price</span><span id="totalPrice">R0.00</span></div>
             </div>
-            <button class="btn btn-primary btn-block" id="confirmBookingBtn" style="margin-top:16px;">Confirm Booking</button>
+            
+            <button class="btn btn-success btn-block" id="confirmBookingBtn" style="margin-top:16px; background:#25D366; border-color:#25D366;">
+                📱 Book via WhatsApp
+            </button>
+            <p style="font-size:0.78rem; color:var(--gray-600); text-align:center; margin-top:8px;">
+                You will be redirected to WhatsApp to confirm your booking with Luu Travels.
+            </p>
         </div>
     </div>
 </div>
