@@ -96,12 +96,80 @@ img { max-width: 100%; display: block; }
 .brand-name span { display: block; font-size: 0.7rem; font-weight: 400; color: var(--accent); }
 
 .nav-links { display: flex; align-items: center; gap: 32px; }
-.nav-links a { color: var(--secondary); font-weight: 500; opacity: 0.9; }
+.nav-links a { color: var(--secondary); font-weight: 500; opacity: 0.9; font-size: 0.9rem; }
 .nav-links a:hover { opacity: 1; color: var(--accent); }
+.nav-links a.active { color: var(--accent); opacity: 1; }
 .nav-actions { display: flex; gap: 12px; align-items: center; }
 
-.hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; background: none; border: none; }
-.hamburger span { width: 26px; height: 3px; background: var(--secondary); border-radius: 2px; }
+/* Hamburger Menu Button */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 4px;
+    z-index: 101;
+}
+.hamburger span {
+    width: 28px;
+    height: 3px;
+    background: var(--secondary);
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    display: block;
+}
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 6px);
+}
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -6px);
+}
+
+/* Mobile Menu */
+.mobile-menu {
+    display: none;
+    position: absolute;
+    top: 76px;
+    left: 0;
+    right: 0;
+    background: var(--primary);
+    flex-direction: column;
+    padding: 20px 24px;
+    gap: 8px;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+.mobile-menu.open {
+    display: flex;
+}
+.mobile-menu a {
+    color: var(--secondary);
+    font-weight: 500;
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.mobile-menu a:hover {
+    background: rgba(255,255,255,0.08);
+}
+.mobile-menu a.active {
+    background: rgba(245,166,35,0.15);
+    color: var(--accent);
+}
+.mobile-menu .btn {
+    margin-top: 4px;
+    width: 100%;
+    justify-content: center;
+}
 
 /* Hero */
 .hero {
@@ -344,13 +412,3 @@ img { max-width: 100%; display: block; }
     .footer-grid { grid-template-columns: 1fr; }
     .mobile-menu.open { display: flex; }
 }
-.mobile-menu {
-    display: none;
-    position: absolute; top: 76px; left: 0; right: 0;
-    background: var(--primary);
-    flex-direction: column;
-    padding: 20px 24px;
-    gap: 16px;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-}
-.mobile-menu a, .mobile-menu .btn { color: var(--secondary); }
