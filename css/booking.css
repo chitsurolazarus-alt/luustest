@@ -61,23 +61,6 @@
 }
 .route-chip.active { background: var(--primary); color: var(--secondary); border-color: var(--primary); }
 
-.trip-list { display: flex; flex-direction: column; gap: 12px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
-.trip-card {
-    border: 1.5px solid var(--gray-200);
-    border-radius: 10px;
-    padding: 16px;
-    cursor: pointer;
-    transition: border-color 0.15s ease, background 0.15s ease;
-}
-.trip-card:hover { border-color: var(--accent); }
-.trip-card.selected { border-color: var(--accent); background: rgba(245,166,35,0.06); }
-.trip-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.trip-card-route { font-weight: 700; color: var(--primary); font-size: 0.92rem; }
-.trip-card-price { font-family: var(--font-display); font-weight: 700; color: var(--accent-dark); }
-.trip-card-meta { display: flex; gap: 14px; flex-wrap: wrap; font-size: 0.8rem; color: var(--gray-600); }
-.trip-card-meta span { display: flex; align-items: center; gap: 4px; }
-.trip-empty { text-align: center; padding: 40px 20px; color: var(--gray-600); font-size: 0.9rem; }
-
 /* Time slot chips */
 .time-slot-chip {
     padding: 8px 16px;
@@ -100,20 +83,14 @@
     border-color: var(--primary);
 }
 
+.trip-empty { text-align: center; padding: 40px 20px; color: var(--gray-600); font-size: 0.9rem; }
+
 .seat-selector { display: flex; align-items: center; gap: 14px; }
 .seat-selector button {
     width: 36px; height: 36px; border-radius: 50%; border: 1.5px solid var(--gray-200);
     background: var(--secondary); font-size: 1.2rem; cursor: pointer; color: var(--primary);
 }
 .seat-selector input { width: 60px; text-align: center; border: none; background: transparent; font-weight: 700; font-size: 1.1rem; }
-
-.payment-options { display: flex; gap: 12px; }
-.payment-option {
-    flex: 1; border: 1.5px solid var(--gray-200); border-radius: 10px; padding: 14px; text-align: center;
-    cursor: pointer; font-weight: 600; color: var(--gray-600); font-size: 0.88rem;
-}
-.payment-option.selected { border-color: var(--accent); background: rgba(245,166,35,0.08); color: var(--primary); }
-.payment-option small { display: block; font-weight: 400; margin-top: 4px; color: var(--gray-400); }
 
 .price-summary { border-top: 1px dashed var(--gray-200); padding-top: 16px; margin-top: 16px; }
 .price-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; color: var(--gray-600); }
