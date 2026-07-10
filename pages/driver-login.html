@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Login | Luu Travels & Logistics</title>
+<link rel="icon" type="image/png" href="../assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="auth-wrapper" style="background:linear-gradient(135deg, #0B133F, var(--primary));">
+    <div class="auth-card">
+        <a href="../index.html" class="brand">
+            <img src="../assets/logo.png" alt="Luu Travels logo">
+            <span class="brand-name">Luu Travels <span>Driver Portal</span></span>
+        </a>
+        <h2>Driver Login</h2>
+        <p class="subtitle">Access your driver dashboard to manage trips and passengers.</p>
+
+        <form id="driverLoginForm" novalidate>
+            <div class="form-group">
+                <label for="email">Driver Email</label>
+                <input type="email" id="email" required placeholder="driver@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required placeholder="Your password">
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div class="form-check" style="margin-bottom:0;">
+                    <input type="checkbox" id="rememberMe">
+                    <label for="rememberMe">Remember me</label>
+                </div>
+                <a href="forgot-password.html" style="font-size:0.85rem; color:var(--accent-dark); font-weight:600;">Forgot password?</a>
+            </div>
+            <div style="margin-top:20px;">
+                <button type="submit" class="btn btn-primary btn-block" id="driverLoginBtn">Log In as Driver</button>
+            </div>
+        </form>
+        
+        <div class="form-footer">Not a driver yet? <a href="driver-register.html" style="color:var(--accent-dark); font-weight:600;">Register as Driver</a></div>
+        <div class="form-footer"><a href="login.html" style="color:var(--gray-600);">&larr; Back to customer login</a></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+    document.getElementById('driverLoginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const btn = document.getElementById('driverLoginBtn');
+        btn.disabled = true;
+        btn.textContent = 'Verifying...';
+
+        try {
+            const { profile } = await AuthManager.login({ email, password });
+            
+            if (profile.role !== 'driver') {
+                await AuthManager.logout();
+                showToast('This account is not registered as a driver.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Log In as Driver';
+                return;
+            }
+            
+            // Check if driver is approved and active
+            const { data: driverData } = await supabaseClient
+                .from('drivers')
+                .select('is_approved, is_active')
+                .eq('user_id', profile.id)
+                .single();
+                
+            if (!driverData) {
+                showToast('Driver profile not found. Please contact support.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Log In as Driver';
+                return;
+            }
+            
+            if (!driverData.is_approved) {
+                showToast('Your driver account is pending admin approval.', 'warning');
+                btn.disabled = false;
+                btn.textContent = 'Log In as Driver';
+                return;
+            }
+            
+            if (!driverData.is_active) {
+                showToast('Your driver account has been deactivated. Please contact support.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Log In as Driver';
+                return;
+            }
+
+            showToast('Welcome back, driver!', 'success');
+            setTimeout(() => window.location.href = 'driver-dashboard.html', 800);
+        } catch (err) {
+            showToast(err.message || 'Login failed. Check your details and try again.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Log In as Driver';
+        }
+    });
+</script>
+</body>
+</html>
