@@ -20,9 +20,9 @@
         </div>
         <nav class="admin-nav">
             <button class="admin-nav-item active" data-section="dashboard">📊 Dashboard</button>
+            <button class="admin-nav-item" data-section="bookings">📋 Bookings</button>
             <button class="admin-nav-item" data-section="drivers">🚗 Drivers</button>
             <button class="admin-nav-item" data-section="trips">📅 Trips</button>
-            <button class="admin-nav-item" data-section="bookings">📋 Bookings</button>
             <button class="admin-nav-item" data-section="ads">📢 Ads</button>
             <button class="admin-nav-item" data-section="timeslots">⏰ Time Slots</button>
             <button class="admin-nav-item" data-section="reviews">⭐ Reviews</button>
@@ -42,10 +42,10 @@
         <!-- DASHBOARD SECTION -->
         <section class="admin-section active" id="section-dashboard">
             <div class="stats-grid">
-                <div class="stat-card"><div class="stat-icon">🚗</div><div><div class="stat-value" id="statDrivers">0</div><div class="stat-label">Total Drivers</div></div></div>
-                <div class="stat-card"><div class="stat-icon">📅</div><div><div class="stat-value" id="statTrips">0</div><div class="stat-label">Total Trips</div></div></div>
                 <div class="stat-card"><div class="stat-icon">📋</div><div><div class="stat-value" id="statBookings">0</div><div class="stat-label">Total Bookings</div></div></div>
                 <div class="stat-card"><div class="stat-icon">⏳</div><div><div class="stat-value" id="statPending">0</div><div class="stat-label">Pending Bookings</div></div></div>
+                <div class="stat-card"><div class="stat-icon">✅</div><div><div class="stat-value" id="statConfirmed">0</div><div class="stat-label">Confirmed Bookings</div></div></div>
+                <div class="stat-card"><div class="stat-icon">🚗</div><div><div class="stat-value" id="statDrivers">0</div><div class="stat-label">Total Drivers</div></div></div>
             </div>
 
             <div class="admin-card">
@@ -63,6 +63,36 @@
                 <div class="table-wrapper">
                     <table class="data-table" id="recentTripsTable">
                         <thead><tr><th>Route</th><th>Driver</th><th>Departure</th><th>Seats</th><th>Price</th><th>Status</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- BOOKINGS SECTION -->
+        <section class="admin-section" id="section-bookings">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3>All Bookings</h3>
+                    <span style="font-size:0.85rem; color:var(--gray-600);">Click Confirm to notify customer</span>
+                </div>
+                <p style="color:var(--gray-600); font-size:0.85rem; margin-bottom:14px;">
+                    Confirm pending bookings to notify customers via their dashboard.
+                </p>
+                <div class="table-wrapper">
+                    <table class="data-table" id="bookingsTable">
+                        <thead>
+                            <tr>
+                                <th>Reference</th>
+                                <th>Customer</th>
+                                <th>Pickup → Dropoff</th>
+                                <th>Seats</th>
+                                <th>Total</th>
+                                <th>Payment</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -97,20 +127,7 @@
                         <thead><tr><th>Route</th><th>Driver</th><th>Departure</th><th>Seats</th><th>Price</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody></tbody>
                     </table>
-                    <p style="color:var(--gray-600); font-size:0.8rem; margin-top:10px;">Change a trip's status to "in-progress" or "completed" using the dropdown in its row — drivers can also update this from their own dashboard.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- BOOKINGS SECTION -->
-        <section class="admin-section" id="section-bookings">
-            <div class="admin-card">
-                <div class="admin-card-header"><h3>All Bookings</h3></div>
-                <div class="table-wrapper">
-                    <table class="data-table" id="bookingsTable">
-                        <thead><tr><th>Reference</th><th>Customer</th><th>Route</th><th>Seats</th><th>Total</th><th>Payment</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
+                    <p style="color:var(--gray-600); font-size:0.8rem; margin-top:10px;">Change a trip's status to "in-progress" or "completed" using the dropdown in its row.</p>
                 </div>
             </div>
         </section>
@@ -201,7 +218,7 @@
         <form id="tripForm">
             <div class="form-group">
                 <label>Driver</label>
-                <select id="tripDriver" required><option value="">Select driver</option></select>
+                <select id="tripDriver"><option value="">Select driver</option></select>
             </div>
             <div class="form-group">
                 <label>Route</label>
