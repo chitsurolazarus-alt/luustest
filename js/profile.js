@@ -9,19 +9,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     const profile = await AuthManager.getProfile(user.id);
     renderProfile(profile, user);
     await loadBookingCount(user.id);
+    setupMobileMenu();
 
-    // Bottom nav logout
-    document.getElementById('bottomLogout').addEventListener('click', async (e) => {
-        e.preventDefault();
-        await AuthManager.logout();
-        window.location.href = '../index.html';
-    });
-
+    // Logout handlers
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         await AuthManager.logout();
         window.location.href = '../index.html';
     });
+
+    document.getElementById('mobileLogout').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await AuthManager.logout();
+        window.location.href = '../index.html';
+    });
 });
+
+function setupMobileMenu() {
+    const hamburger = document.getElementById('hamburgerBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('open');
+        });
+
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                mobileMenu.classList.remove('open');
+            });
+        });
+    }
+}
 
 function renderProfile(profile, user) {
     const initial = profile.full_name.charAt(0).toUpperCase();
