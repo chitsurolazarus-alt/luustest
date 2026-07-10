@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Registration | Luu Travels & Logistics</title>
+<link rel="icon" type="image/png" href="../assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="auth-wrapper">
+    <div class="auth-card" style="max-width:520px;">
+        <a href="../index.html" class="brand">
+            <img src="../assets/logo.png" alt="Luu Travels logo">
+            <span class="brand-name">Luu Travels <span>& Logistics</span></span>
+        </a>
+        <h2>Driver Registration</h2>
+        <p class="subtitle">Register your details and vehicle. An admin will review and approve your account before you can be assigned trips.</p>
+
+        <form id="driverRegisterForm" novalidate>
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" required>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label for="email">Email Address</label><input type="email" id="email" required></div>
+                <div class="form-group"><label for="phone">Phone Number</label><input type="tel" id="phone" required maxlength="10"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label for="password">Password</label><input type="password" id="password" required minlength="6"></div>
+                <div class="form-group"><label for="confirmPassword">Confirm Password</label><input type="password" id="confirmPassword" required></div>
+            </div>
+            <hr style="border:none; border-top:1px solid var(--gray-200); margin:8px 0 18px;">
+            <div class="form-row">
+                <div class="form-group"><label for="license">Driver's License Number</label><input type="text" id="license" required></div>
+                <div class="form-group"><label for="prdp">PrDP Number</label><input type="text" id="prdp"></div>
+            </div>
+            <div class="form-group"><label for="vehicleReg">Vehicle Registration</label><input type="text" id="vehicleReg" required></div>
+            <div class="form-row">
+                <div class="form-group"><label for="vehicleModel">Vehicle Model</label><input type="text" id="vehicleModel" required placeholder="e.g. Toyota Quantum"></div>
+                <div class="form-group"><label for="vehicleColor">Vehicle Color</label><input type="text" id="vehicleColor" required></div>
+            </div>
+            <div class="form-group"><label for="vehicleCapacity">Seating Capacity</label><input type="number" id="vehicleCapacity" value="14" min="1" max="14" required></div>
+
+            <div style="margin-top:20px;">
+                <button type="submit" class="btn btn-primary btn-block" id="driverRegisterBtn">Submit Application</button>
+            </div>
+        </form>
+        <div class="form-footer">Already registered? <a href="login.html" style="color:var(--accent-dark); font-weight:600;">Log in</a></div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+    document.getElementById('driverRegisterForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fullName = document.getElementById('fullName').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (!/^\d{10}$/.test(phone)) { showToast('Phone number must be exactly 10 digits.', 'error'); return; }
+        if (password !== confirmPassword) { showToast('Passwords do not match.', 'error'); return; }
+        if (password.length < 6) { showToast('Password must be at least 6 characters.', 'error'); return; }
+
+        const btn = document.getElementById('driverRegisterBtn');
+        btn.disabled = true;
+        btn.textContent = 'Submitting...';
+
+        try {
+            // 1. Create the auth account, tagged as a driver in the metadata
+            //    (a database trigger uses this to set role='driver' automatically)
+            const { data, error } = await supabaseClient.auth.signUp({
+                email, password,
+                options: { data: { full_name: fullName, phone, role: 'driver' } }
+            });
+            if (error) throw error;
+
+            // 2. Create the driver profile (pending admin approval)
+            const userId = data.user?.id;
+            if (userId) {
+                const { error: driverError } = await supabaseClient.from('drivers').insert([{
+                    user_id: userId,
+                    full_name: fullName,
+                    email,
+                    phone,
+                    license_number: document.getElementById('license').value.trim(),
+                    prdp_number: document.getElementById('prdp').value.trim() || null,
+                    vehicle_registration: document.getElementById('vehicleReg').value.trim(),
+                    vehicle_model: document.getElementById('vehicleModel').value.trim(),
+                    vehicle_color: document.getElementById('vehicleColor').value.trim(),
+                    vehicle_capacity: parseInt(document.getElementById('vehicleCapacity').value, 10),
+                    is_approved: false,
+                    is_active: true
+                }]);
+                if (driverError) throw driverError;
+            }
+
+            showToast('Application submitted! Please check your email to confirm your account. An admin will review your details next.', 'success');
+            setTimeout(() => window.location.href = 'login.html', 2500);
+        } catch (err) {
+            showToast(err.message || 'Registration failed. Please try again.', 'error');
+            btn.disabled = false;
+            btn.textContent = 'Submit Application';
+        }
+    });
+</script>
+</body>
+</html>

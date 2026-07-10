@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Driver Dashboard | Luu Travels & Logistics</title>
+<link rel="icon" type="image/png" href="../assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/driver.css">
+</head>
+<body class="driver-page">
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../index.html" class="brand">
+            <img src="../assets/logo.png" alt="Luu Travels logo">
+            <span class="brand-name">Luu Travels <span>Driver</span></span>
+        </a>
+        <div class="nav-actions">
+            <button class="btn btn-outline btn-sm" id="logoutBtn" style="color:var(--secondary); border-color:var(--secondary);">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<header class="driver-header">
+    <div class="container">
+        <div>
+            <h1 id="welcomeText">Welcome</h1>
+            <p>Your assigned trips and passengers appear below.</p>
+        </div>
+        <div class="location-toggle">
+            <span class="dot" id="liveDot"></span>
+            <span id="liveLabel" style="font-size:0.85rem;">Location sharing off</span>
+            <button class="btn btn-primary btn-sm" id="liveToggleBtn">Go Live</button>
+        </div>
+    </div>
+</header>
+
+<div class="driver-body" id="driverBody">
+    <div class="empty-state"><div class="icon">⏳</div>Loading your dashboard...</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/driver.js"></script>
+</body>
+</html>

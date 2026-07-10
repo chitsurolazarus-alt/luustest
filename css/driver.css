@@ -1,0 +1,38 @@
+/* =====================================================================
+   LUU TRAVELS & LOGISTICS - DRIVER DASHBOARD STYLES
+   ===================================================================== */
+
+.driver-page { background: var(--gray-100); min-height: 100vh; }
+.driver-header { background: var(--primary); color: var(--secondary); padding: 32px 0; }
+.driver-header .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+.driver-header h1 { color: var(--secondary); font-size: 1.5rem; }
+.driver-header p { color: var(--gray-200); font-size: 0.9rem; margin-top: 4px; }
+
+.location-toggle { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.08); padding: 10px 16px; border-radius: 999px; }
+.location-toggle .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gray-400); }
+.location-toggle .dot.live { background: var(--success); box-shadow: 0 0 0 4px rgba(40,167,69,0.25); }
+
+.driver-body { max-width: 1000px; margin: 0 auto; padding: 32px 24px 60px; }
+
+.pending-banner {
+    background: rgba(245,166,35,0.12); border: 1px solid var(--accent);
+    border-radius: var(--radius); padding: 24px; text-align: center; color: var(--accent-dark); font-weight: 600;
+}
+
+.trip-assignment-card { background: var(--secondary); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; margin-bottom: 20px; }
+.trip-assignment-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+.trip-assignment-route { font-family: var(--font-display); font-weight: 700; color: var(--primary); font-size: 1.1rem; }
+.trip-assignment-meta { color: var(--gray-600); font-size: 0.85rem; margin-top: 4px; }
+
+.passenger-count-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--primary); color: var(--secondary);
+    padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: 0.82rem;
+}
+
+.passenger-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 0.88rem; }
+.passenger-table th { text-align: left; padding: 8px 10px; background: var(--gray-100); color: var(--gray-600); font-size: 0.72rem; text-transform: uppercase; }
+.passenger-table td { padding: 10px; border-bottom: 1px solid var(--gray-200); }
+.passenger-table tr:last-child td { border-bottom: none; }
+
+.trip-status-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
