@@ -389,7 +389,7 @@ function renderSlots() {
                 <button class="btn btn-danger btn-sm" data-delete-slot="${s.id}">Delete</button>
             </td>
         </tr>
-    `).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--gray-600);">No time slots added yet.</td></tr>';
+    `).join('') || '<tr><td colspan="4" style="text-align:center; color:var(--gray-600);">No time slots added yet. Add slots for each route and time.</td></tr>';
 
     document.querySelectorAll('[data-toggle-slot]').forEach(btn => btn.addEventListener('click', () => toggleSlotActive(btn.dataset.toggleSlot, btn.dataset.active === 'true')));
     document.querySelectorAll('[data-delete-slot]').forEach(btn => btn.addEventListener('click', () => deleteSlot(btn.dataset.deleteSlot)));
@@ -398,6 +398,7 @@ function renderSlots() {
 async function toggleSlotActive(id, isActive) {
     const { error } = await supabaseClient.from('time_slots').update({ is_active: !isActive }).eq('id', id);
     if (error) { showToast(error.message, 'error'); return; }
+    showToast(`Time slot ${!isActive ? 'activated' : 'deactivated'}.`, 'success');
     await loadSlots();
 }
 
