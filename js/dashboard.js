@@ -24,22 +24,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupHandlers();
     setupReviewModal(user.id);
     setupRealTimeNotifications(user.id);
+    setupMobileMenu();
 
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
     }
 
-    // Bottom nav logout
-    document.getElementById('bottomLogout').addEventListener('click', async (e) => {
-        e.preventDefault();
-        if (DashboardState.subscription) {
-            DashboardState.subscription.unsubscribe();
-        }
-        await AuthManager.logout();
-        window.location.href = '../index.html';
-    });
-
+    // Logout handlers
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         if (DashboardState.subscription) {
             DashboardState.subscription.unsubscribe();
@@ -47,7 +39,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         await AuthManager.logout();
         window.location.href = '../index.html';
     });
+
+    document.getElementById('mobileLogout').addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (DashboardState.subscription) {
+            DashboardState.subscription.unsubscribe();
+        }
+        await AuthManager.logout();
+        window.location.href = '../index.html';
+    });
 });
+
+/* =====================================================================
+   MOBILE MENU
+   ===================================================================== */
+function setupMobileMenu() {
+    const hamburger = document.getElementById('hamburgerBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('open');
+        });
+
+        // Close menu when a link is clicked
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                mobileMenu.classList.remove('open');
+            });
+        });
+    }
+}
 
 async function loadOwnReviews(userId) {
     const { data, error } = await supabaseClient.from('reviews').select('booking_id').eq('user_id', userId);
@@ -339,7 +363,7 @@ function handleBookingStatusChange(booking, oldStatus, newStatus) {
     const statusMessages = {
         'confirmed': {
             title: '✅ Booking Confirmed!',
-            body: `Your booking ${booking.booking_reference} has been confirmed. Your driver will be assigned soon.`
+            body: `Your booking ${booking.booking_reference} has been confirmed.`
         },
         'completed': {
             title: '🎉 Trip Completed!',
