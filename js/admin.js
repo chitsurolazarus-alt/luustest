@@ -32,9 +32,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupNavigation() {
     const titles = {
         dashboard: 'Dashboard Overview',
+        bookings: 'Booking Management',
         drivers: 'Driver Management',
         trips: 'Trip Management',
-        bookings: 'Booking Management',
         ads: 'Advertisement Management',
         timeslots: 'Time Slot Management',
         reviews: 'Review Moderation'
@@ -71,9 +71,19 @@ function closeModal(id) { document.getElementById(id).classList.remove('open'); 
 
 /* ------------------------------- LOAD -------------------------------- */
 async function refreshAll() {
-    await Promise.all([loadDrivers(), loadTrips(), loadBookings(), loadAds(), loadSlots(), loadReviews()]);
+    await Promise.all([loadBookings(), loadDrivers(), loadTrips(), loadAds(), loadSlots(), loadReviews()]);
     renderDashboardStats();
     renderRecentTables();
+}
+
+async function loadBookings() {
+    const { data, error } = await supabaseClient
+        .from('bookings')
+        .select('*, users(full_name, email, phone), trips(route, pickup_location, dropoff_location)')
+        .order('created_at', { ascending: false });
+    if (error) { showToast('Error loading bookings: ' + error.message, 'error'); return; }
+    AdminState.bookings = data || [];
+    renderBookings();
 }
 
 async function loadDrivers() {
@@ -94,16 +104,6 @@ async function loadTrips() {
     renderTrips();
 }
 
-async function loadBookings() {
-    const { data, error } = await supabaseClient
-        .from('bookings')
-        .select('*, users(full_name, email), trips(route)')
-        .order('created_at', { ascending: false });
-    if (error) { showToast('Error loading bookings: ' + error.message, 'error'); return; }
-    AdminState.bookings = data || [];
-    renderBookings();
-}
-
 async function loadAds() {
     const { data, error } = await supabaseClient.from('ads').select('*').order('display_order', { ascending: true });
     if (error) { showToast('Error loading ads: ' + error.message, 'error'); return; }
@@ -118,12 +118,25 @@ async function loadSlots() {
     renderSlots();
 }
 
+async function loadReviews() {
+    const { data, error } = await supabaseClient
+        .from('reviews')
+        .select('*, users(full_name, email)')
+        .order('created_at', { ascending: false });
+    if (error) { showToast('Error loading reviews: ' + error.message, 'error'); return; }
+    AdminState.reviews = data || [];
+    renderReviews();
+}
+
 /* ---------------------------- DASHBOARD ------------------------------ */
 function renderDashboardStats() {
-    document.getElementById('statDrivers').textContent = AdminState.drivers.length;
-    document.getElementById('statTrips').textContent = AdminState.trips.length;
+    const pending = AdminState.bookings.filter(b => b.booking_status === 'pending').length;
+    const confirmed = AdminState.bookings.filter(b => b.booking_status === 'confirmed').length;
+    
     document.getElementById('statBookings').textContent = AdminState.bookings.length;
-    document.getElementById('statPending').textContent = AdminState.bookings.filter(b => b.booking_status === 'pending').length;
+    document.getElementById('statPending').textContent = pending;
+    document.getElementById('statConfirmed').textContent = confirmed;
+    document.getElementById('statDrivers').textContent = AdminState.drivers.length;
 }
 
 function renderRecentTables() {
@@ -132,7 +145,7 @@ function renderRecentTables() {
         <tr>
             <td>${b.booking_reference}</td>
             <td>${b.users ? b.users.full_name : '—'}</td>
-            <td>${b.trips ? b.trips.route.replace('-', ' → ') : '—'}</td>
+            <td>${b.trips ? b.trips.route.replace('-', ' → ') : 'Route TBD'}</td>
             <td>${b.number_of_seats}</td>
             <td>${formatCurrency(b.total_price)}</td>
             <td><span class="badge badge-${b.booking_status}">${b.booking_status}</span></td>
@@ -150,6 +163,111 @@ function renderRecentTables() {
             <td><span class="badge badge-active">${t.status}</span></td>
         </tr>
     `).join('') || '<tr><td colspan="6" style="text-align:center; color:var(--gray-600);">No trips yet.</td></tr>';
+}
+
+/* ------------------------------ BOOKINGS ------------------------------ */
+function renderBookings() {
+    const statuses = ['pending', 'confirmed', 'completed', 'cancelled'];
+    document.querySelector('#bookingsTable tbody').innerHTML = AdminState.bookings.map(b => `
+        <tr>
+            <td><strong>${b.booking_reference}</strong></td>
+            <td>
+                ${b.users ? `${b.users.full_name}<br><small style="color:var(--gray-600);">${b.users.email}</small>` : '—'}
+                ${b.users?.phone ? `<br><small style="color:var(--gray-600);">📱 ${b.users.phone}</small>` : ''}
+            </td>
+            <td style="font-size:0.85rem;">
+                ${b.pickup_location || b.trips?.pickup_location || '—'}<br>
+                <span style="color:var(--gray-600);">↓</span>
+                ${b.dropoff_location || b.trips?.dropoff_location || '—'}
+            </td>
+            <td>${b.number_of_seats}</td>
+            <td>${formatCurrency(b.total_price)}</td>
+            <td style="text-transform:capitalize; font-size:0.85rem;">
+                ${b.payment_method} · 
+                <span class="badge ${b.payment_status === 'paid' ? 'badge-confirmed' : 'badge-pending'}">${b.payment_status}</span>
+            </td>
+            <td>
+                <select class="select-status" data-status-for="${b.id}">
+                    ${statuses.map(s => `<option value="${s}" ${s === b.booking_status ? 'selected' : ''}>${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('')}
+                </select>
+            </td>
+            <td class="table-actions" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
+                ${b.booking_status === 'pending' ? `<button class="btn btn-success btn-sm" data-confirm="${b.id}" style="width:100%;">✅ Confirm</button>` : ''}
+                ${b.booking_status === 'confirmed' ? `<button class="btn btn-navy btn-sm" data-complete="${b.id}" style="width:100%;">🎉 Complete</button>` : ''}
+                <button class="btn btn-danger btn-sm" data-delete-booking="${b.id}" style="width:100%;">🗑 Delete</button>
+            </td>
+        </tr>
+    `).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--gray-600);">No bookings yet.</td></tr>';
+
+    document.querySelectorAll('[data-status-for]').forEach(sel => {
+        sel.addEventListener('change', () => updateBookingStatus(sel.dataset.statusFor, sel.value));
+    });
+    document.querySelectorAll('[data-delete-booking]').forEach(btn => btn.addEventListener('click', () => deleteBooking(btn.dataset.deleteBooking)));
+    document.querySelectorAll('[data-confirm]').forEach(btn => btn.addEventListener('click', () => confirmBooking(btn.dataset.confirm)));
+    document.querySelectorAll('[data-complete]').forEach(btn => btn.addEventListener('click', () => completeBooking(btn.dataset.complete)));
+}
+
+async function confirmBooking(bookingId) {
+    if (!confirm('Confirm this booking? The customer will be notified.')) return;
+    
+    const { error } = await supabaseClient
+        .from('bookings')
+        .update({ 
+            booking_status: 'confirmed',
+            payment_status: 'pending'
+        })
+        .eq('id', bookingId);
+        
+    if (error) { 
+        showToast('Error confirming booking: ' + error.message, 'error'); 
+        return; 
+    }
+    
+    showToast('✅ Booking confirmed! Customer has been notified.', 'success');
+    await loadBookings();
+    renderDashboardStats();
+    renderRecentTables();
+}
+
+async function completeBooking(bookingId) {
+    if (!confirm('Mark this booking as completed?')) return;
+    
+    const { error } = await supabaseClient
+        .from('bookings')
+        .update({ 
+            booking_status: 'completed',
+            payment_status: 'paid'
+        })
+        .eq('id', bookingId);
+        
+    if (error) { 
+        showToast('Error completing booking: ' + error.message, 'error'); 
+        return; 
+    }
+    
+    showToast('🎉 Booking completed! Customer can now leave a review.', 'success');
+    await loadBookings();
+    renderDashboardStats();
+    renderRecentTables();
+}
+
+async function updateBookingStatus(id, status) {
+    const { error } = await supabaseClient.from('bookings').update({ booking_status: status }).eq('id', id);
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast(`Booking ${status}.`, 'success');
+    await loadBookings();
+    renderDashboardStats();
+    renderRecentTables();
+}
+
+async function deleteBooking(id) {
+    if (!confirm('Delete this booking permanently?')) return;
+    const { error } = await supabaseClient.from('bookings').delete().eq('id', id);
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast('Booking deleted.', 'success');
+    await loadBookings();
+    renderDashboardStats();
+    renderRecentTables();
 }
 
 /* ------------------------------ DRIVERS ------------------------------ */
@@ -236,6 +354,7 @@ async function updateTripStatus(tripId, status) {
     const { error } = await supabaseClient.from('trips').update({ status }).eq('id', tripId);
     if (error) { showToast(error.message, 'error'); return; }
     if (status === 'completed') {
+        // Auto-complete related bookings
         await supabaseClient.from('bookings').update({ booking_status: 'completed' }).eq('trip_id', tripId).neq('booking_status', 'cancelled');
     }
     showToast('Trip status updated.', 'success');
@@ -249,53 +368,6 @@ async function deleteTrip(id) {
     if (error) { showToast(error.message, 'error'); return; }
     showToast('Trip deleted.', 'success');
     await loadTrips();
-    renderDashboardStats();
-    renderRecentTables();
-}
-
-/* ------------------------------ BOOKINGS ------------------------------ */
-function renderBookings() {
-    const statuses = ['pending', 'confirmed', 'completed', 'cancelled'];
-    document.querySelector('#bookingsTable tbody').innerHTML = AdminState.bookings.map(b => `
-        <tr>
-            <td>${b.booking_reference}</td>
-            <td>${b.users ? `${b.users.full_name}<br><small style="color:var(--gray-600);">${b.users.email}</small>` : '—'}</td>
-            <td>${b.trips ? b.trips.route.replace('-', ' → ') : '—'}</td>
-            <td>${b.number_of_seats}</td>
-            <td>${formatCurrency(b.total_price)}</td>
-            <td style="text-transform:capitalize;">${b.payment_method} · ${b.payment_status}</td>
-            <td>
-                <select class="select-status" data-status-for="${b.id}">
-                    ${statuses.map(s => `<option value="${s}" ${s === b.booking_status ? 'selected' : ''}>${s}</option>`).join('')}
-                </select>
-            </td>
-            <td class="table-actions">
-                <button class="btn btn-danger btn-sm" data-delete-booking="${b.id}">Delete</button>
-            </td>
-        </tr>
-    `).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--gray-600);">No bookings yet.</td></tr>';
-
-    document.querySelectorAll('[data-status-for]').forEach(sel => {
-        sel.addEventListener('change', () => updateBookingStatus(sel.dataset.statusFor, sel.value));
-    });
-    document.querySelectorAll('[data-delete-booking]').forEach(btn => btn.addEventListener('click', () => deleteBooking(btn.dataset.deleteBooking)));
-}
-
-async function updateBookingStatus(id, status) {
-    const { error } = await supabaseClient.from('bookings').update({ booking_status: status }).eq('id', id);
-    if (error) { showToast(error.message, 'error'); return; }
-    showToast('Booking status updated.', 'success');
-    await loadBookings();
-    renderDashboardStats();
-    renderRecentTables();
-}
-
-async function deleteBooking(id) {
-    if (!confirm('Delete this booking permanently?')) return;
-    const { error } = await supabaseClient.from('bookings').delete().eq('id', id);
-    if (error) { showToast(error.message, 'error'); return; }
-    showToast('Booking deleted.', 'success');
-    await loadBookings();
     renderDashboardStats();
     renderRecentTables();
 }
@@ -333,16 +405,6 @@ async function deleteAd(id) {
 }
 
 /* ------------------------------ REVIEWS -------------------------------- */
-async function loadReviews() {
-    const { data, error } = await supabaseClient
-        .from('reviews')
-        .select('*, users(full_name, email)')
-        .order('created_at', { ascending: false });
-    if (error) { showToast('Error loading reviews: ' + error.message, 'error'); return; }
-    AdminState.reviews = data || [];
-    renderReviews();
-}
-
 function renderReviews() {
     document.querySelector('#reviewsTable tbody').innerHTML = AdminState.reviews.map(r => `
         <tr>
@@ -430,7 +492,7 @@ function setupForms() {
             vehicle_model: document.getElementById('vehicleModel').value.trim(),
             vehicle_color: document.getElementById('vehicleColor').value.trim(),
             vehicle_capacity: parseInt(document.getElementById('vehicleCapacity').value, 10),
-            is_approved: true // admin-added drivers are pre-approved
+            is_approved: true
         };
         const { error } = await supabaseClient.from('drivers').insert([payload]);
         if (error) { showToast(error.message, 'error'); return; }
