@@ -18,9 +18,32 @@
             <img src="../assets/logo.png" alt="Luu Travels logo">
             <span class="brand-name">Luu Travels <span>& Logistics</span></span>
         </a>
+        
+        <!-- HAMBURGER MENU BUTTON -->
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        
+        <!-- DESKTOP NAV LINKS -->
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="booking.html">Book Trip</a>
+            <a href="profile.html">Profile</a>
+        </div>
+        
         <div class="nav-actions">
             <button class="btn btn-outline btn-sm" id="logoutBtn" style="color:var(--secondary); border-color:var(--secondary);">Logout</button>
         </div>
+    </div>
+    
+    <!-- MOBILE MENU -->
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="dashboard.html">📋 Dashboard</a>
+        <a href="booking.html" class="active">🚐 Book Trip</a>
+        <a href="profile.html">👤 Profile</a>
+        <a href="#" id="mobileLogout">🚪 Logout</a>
     </div>
 </nav>
 
@@ -127,26 +150,6 @@
         </div>
     </div>
 </div>
-
-<!-- BOTTOM NAVIGATION MENU - ALWAYS VISIBLE -->
-<nav class="bottom-nav" id="bottomNav">
-    <a href="dashboard.html" class="bottom-nav-item">
-        <span class="bottom-nav-icon">📋</span>
-        <span class="bottom-nav-label">Dashboard</span>
-    </a>
-    <a href="booking.html" class="bottom-nav-item active">
-        <span class="bottom-nav-icon">🚐</span>
-        <span class="bottom-nav-label">Book Trip</span>
-    </a>
-    <a href="profile.html" class="bottom-nav-item">
-        <span class="bottom-nav-icon">👤</span>
-        <span class="bottom-nav-label">Profile</span>
-    </a>
-    <a href="#" class="bottom-nav-item" id="bottomLogout">
-        <span class="bottom-nav-icon">🚪</span>
-        <span class="bottom-nav-label">Logout</span>
-    </a>
-</nav>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
