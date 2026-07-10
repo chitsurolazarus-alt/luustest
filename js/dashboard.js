@@ -30,6 +30,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         Notification.requestPermission();
     }
 
+    // Bottom nav logout
+    document.getElementById('bottomLogout').addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (DashboardState.subscription) {
+            DashboardState.subscription.unsubscribe();
+        }
+        await AuthManager.logout();
+        window.location.href = '../index.html';
+    });
+
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         if (DashboardState.subscription) {
             DashboardState.subscription.unsubscribe();
@@ -52,7 +62,7 @@ function renderProfile() {
     document.getElementById('avatarInitial').textContent = p.full_name.charAt(0).toUpperCase();
     document.getElementById('profileName').textContent = p.full_name;
     document.getElementById('profileEmail').textContent = p.email;
-    document.getElementById('profilePhone').textContent = p.phone;
+    document.getElementById('profilePhone').textContent = p.phone || 'Not provided';
     document.getElementById('profileSince').textContent = new Date(p.created_at).toLocaleDateString('en-ZA', { year: 'numeric', month: 'long' });
 }
 
@@ -93,7 +103,7 @@ function updateStatusCounts() {
             tab.textContent = tab.textContent.replace(/\(\d+\)/, '');
             tab.textContent = tab.textContent.trim() + ` (${count})`;
         } else {
-            tab.textContent = `📋 All Trips (${DashboardState.bookings.length})`;
+            tab.textContent = `📋 All (${DashboardState.bookings.length})`;
         }
     });
 }
@@ -110,7 +120,7 @@ function renderBookings() {
                 <div class="icon">📭</div>
                 <h3>No bookings found</h3>
                 <p style="color:var(--gray-600);">${DashboardState.statusFilter === 'all' ? 'You haven\'t made any bookings yet.' : `You have no ${DashboardState.statusFilter} bookings.`}</p>
-                <a href="booking.html" class="btn btn-primary" style="margin-top:16px;">Book a Trip</a>
+                <a href="booking.html" class="btn btn-primary" style="margin-top:16px;">🚐 Book a Trip</a>
             </div>
         `;
         return;
@@ -139,12 +149,12 @@ function renderBookings() {
         };
 
         return `
-            <div class="booking-card">
+            <div class="booking-card status-${b.booking_status}">
                 <div class="booking-card-top">
                     <div>
                         <div class="booking-ref">${b.booking_reference}</div>
                         <div class="booking-route">${trip.route ? trip.route.replace('-', ' → ') : 'Route TBD'}</div>
-                        ${trip.route ? `<div style="font-size:0.8rem; color:var(--gray-600);">${b.pickup_location} → ${b.dropoff_location}</div>` : ''}
+                        ${b.pickup_location ? `<div style="font-size:0.75rem; color:var(--gray-600);">📍 ${b.pickup_location} → ${b.dropoff_location}</div>` : ''}
                     </div>
                     <span class="badge ${statusClass[b.booking_status] || 'badge-pending'}">${statusEmoji[b.booking_status] || '📋'} ${b.booking_status}</span>
                 </div>
@@ -152,13 +162,13 @@ function renderBookings() {
                     <div><div class="label">Departure</div><div class="value">${departure}</div></div>
                     <div><div class="label">Passengers</div><div class="value">${b.number_of_seats}</div></div>
                     <div><div class="label">Total</div><div class="value">${formatCurrency(b.total_price)}</div></div>
-                    <div><div class="label">Payment</div><div class="value" style="text-transform:capitalize;">${b.payment_method} · ${b.payment_status}</div></div>
+                    <div><div class="label">Payment</div><div class="value" style="text-transform:capitalize; font-size:0.8rem;">${b.payment_method} · ${b.payment_status}</div></div>
                 </div>
                 <div class="booking-actions">
-                    ${canCancel ? `<button class="btn btn-danger btn-sm" data-cancel="${b.id}">Cancel Trip</button>` : ''}
-                    ${canTrack ? `<button class="btn btn-navy btn-sm" data-track="${b.id}" data-driver="${trip.drivers.id}">📍 Track Driver</button>` : ''}
-                    ${canReview ? `<button class="btn btn-primary btn-sm" data-review="${b.id}" data-driver-id="${trip.drivers ? trip.drivers.id : ''}">⭐ Leave a Review</button>` : ''}
-                    ${alreadyReviewed ? `<span class="review-note">✓ Review submitted</span>` : ''}
+                    ${canCancel ? `<button class="btn btn-danger btn-sm" data-cancel="${b.id}">Cancel</button>` : ''}
+                    ${canTrack ? `<button class="btn btn-navy btn-sm" data-track="${b.id}" data-driver="${trip.drivers.id}">📍 Track</button>` : ''}
+                    ${canReview ? `<button class="btn btn-primary btn-sm" data-review="${b.id}" data-driver-id="${trip.drivers ? trip.drivers.id : ''}">⭐ Review</button>` : ''}
+                    ${alreadyReviewed ? `<span class="review-note">✓ Reviewed</span>` : ''}
                 </div>
                 <div class="tracking-panel" id="tracking-${b.id}">
                     <div id="tracking-map-${b.id}" style="height:320px;"></div>
@@ -302,7 +312,6 @@ function setupHandlers() {
    ===================================================================== */
 
 function setupRealTimeNotifications(userId) {
-    // Subscribe to changes on bookings table for this user
     DashboardState.subscription = supabaseClient
         .channel('bookings-changes')
         .on(
@@ -318,7 +327,6 @@ function setupRealTimeNotifications(userId) {
                 const oldStatus = payload.old.booking_status;
                 const newStatus = booking.booking_status;
                 
-                // Only notify on status change
                 if (oldStatus !== newStatus) {
                     handleBookingStatusChange(booking, oldStatus, newStatus);
                 }
@@ -346,7 +354,6 @@ function handleBookingStatusChange(booking, oldStatus, newStatus) {
     const notification = statusMessages[newStatus];
     if (!notification) return;
 
-    // Show browser notification
     if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(notification.title, {
             body: notification.body,
@@ -354,13 +361,8 @@ function handleBookingStatusChange(booking, oldStatus, newStatus) {
         });
     }
 
-    // Play sound
     playNotificationSound();
-
-    // Show toast
     showToast(`${notification.title} - ${notification.body}`, 'success');
-
-    // Update the bookings list
     loadBookings(DashboardState.profile.id);
 }
 
@@ -371,14 +373,5 @@ function playNotificationSound() {
             audio.currentTime = 0;
             audio.play().catch(() => {});
         }
-    } catch (e) {
-        // Silently fail if audio can't play
-    }
+    } catch (e) {}
 }
-
-// Request notification permission when user interacts
-document.addEventListener('click', () => {
-    if ('Notification' in window && Notification.permission === 'default') {
-        Notification.requestPermission();
-    }
-});
