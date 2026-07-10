@@ -83,7 +83,7 @@
             <h3>2. Select Travel Date</h3>
             <div class="form-group">
                 <label for="tripDate">Travel Date</label>
-                <input type="date" id="tripDate" min="<%= new Date().toISOString().split('T')[0] %>" style="width:100%; padding:12px 14px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:0.95rem;">
+                <input type="date" id="tripDate" style="width:100%; padding:12px 14px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:0.95rem;">
             </div>
         </div>
 
@@ -91,7 +91,7 @@
             <h3>3. Choose Departure Time Slot</h3>
             <p style="font-size:0.85rem; color:var(--gray-600); margin-bottom:12px;">Select a time slot. Available trips will appear below.</p>
             <div id="timeSlotContainer">
-                <div class="trip-empty">Select a route above to see available time slots.</div>
+                <div class="trip-empty">Loading time slots...</div>
             </div>
             <div style="margin-top:12px; font-size:0.85rem; color:var(--gray-600);">
                 Selected time: <span id="selectedTimeDisplay" style="font-weight:600; color:var(--gray-400);">None selected</span>
@@ -101,12 +101,12 @@
         <div class="panel-card">
             <h3>4. Available Trips</h3>
             <div class="trip-list" id="tripList">
-                <div class="trip-empty">Please select a travel date and time slot above.</div>
+                <div class="trip-empty">Loading trips...</div>
             </div>
         </div>
 
         <div class="panel-card" id="bookingFormCard" style="display:none;">
-            <h3>5. Trip Details</h3>
+            <h3>5. Confirm Your Booking</h3>
             <div class="form-group">
                 <label>Number of Seats</label>
                 <div class="seat-selector">
@@ -137,16 +137,6 @@
         </div>
     </div>
 </div>
-
-<script>
-    // Set min date to today
-    document.addEventListener('DOMContentLoaded', function() {
-        const dateInput = document.getElementById('tripDate');
-        const today = new Date().toISOString().split('T')[0];
-        dateInput.setAttribute('min', today);
-        dateInput.value = today;
-    });
-</script>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
