@@ -8,7 +8,8 @@ const DashboardState = {
     reviewedBookingIds: new Set(),
     statusFilter: 'all',
     openTrackingId: null,
-    selectedRating: 0
+    selectedRating: 0,
+    subscription: null
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -22,8 +23,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderBookings();
     setupHandlers();
     setupReviewModal(user.id);
+    setupRealTimeNotifications(user.id);
+
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
+        if (DashboardState.subscription) {
+            DashboardState.subscription.unsubscribe();
+        }
         await AuthManager.logout();
         window.location.href = '../index.html';
     });
@@ -59,6 +69,33 @@ async function loadBookings(userId) {
     }
     DashboardState.bookings = data || [];
     renderBookings();
+    updateStatusCounts();
+}
+
+function updateStatusCounts() {
+    const counts = {
+        pending: 0,
+        confirmed: 0,
+        completed: 0,
+        cancelled: 0
+    };
+    
+    DashboardState.bookings.forEach(b => {
+        if (counts[b.booking_status] !== undefined) {
+            counts[b.booking_status]++;
+        }
+    });
+
+    document.querySelectorAll('.dash-tab').forEach(tab => {
+        const status = tab.dataset.status;
+        if (status !== 'all') {
+            const count = counts[status] || 0;
+            tab.textContent = tab.textContent.replace(/\(\d+\)/, '');
+            tab.textContent = tab.textContent.trim() + ` (${count})`;
+        } else {
+            tab.textContent = `📋 All Trips (${DashboardState.bookings.length})`;
+        }
+    });
 }
 
 function renderBookings() {
@@ -68,7 +105,14 @@ function renderBookings() {
         : DashboardState.bookings.filter(b => b.booking_status === DashboardState.statusFilter);
 
     if (filtered.length === 0) {
-        list.innerHTML = '<div class="empty-state"><div class="icon">📭</div>No bookings found in this category.</div>';
+        list.innerHTML = `
+            <div class="empty-state">
+                <div class="icon">📭</div>
+                <h3>No bookings found</h3>
+                <p style="color:var(--gray-600);">${DashboardState.statusFilter === 'all' ? 'You haven\'t made any bookings yet.' : `You have no ${DashboardState.statusFilter} bookings.`}</p>
+                <a href="booking.html" class="btn btn-primary" style="margin-top:16px;">Book a Trip</a>
+            </div>
+        `;
         return;
     }
 
@@ -79,26 +123,41 @@ function renderBookings() {
         const canTrack = ['confirmed', 'completed'].includes(b.booking_status) && trip.drivers;
         const canReview = b.booking_status === 'completed' && !DashboardState.reviewedBookingIds.has(b.id);
         const alreadyReviewed = b.booking_status === 'completed' && DashboardState.reviewedBookingIds.has(b.id);
+        
+        const statusEmoji = {
+            'pending': '⏳',
+            'confirmed': '✅',
+            'completed': '🎉',
+            'cancelled': '❌'
+        };
+
+        const statusClass = {
+            'pending': 'badge-pending',
+            'confirmed': 'badge-confirmed',
+            'completed': 'badge-completed',
+            'cancelled': 'badge-cancelled'
+        };
 
         return `
             <div class="booking-card">
                 <div class="booking-card-top">
                     <div>
                         <div class="booking-ref">${b.booking_reference}</div>
-                        <div class="booking-route">${trip.route ? trip.route.replace('-', ' → ') : ''}</div>
+                        <div class="booking-route">${trip.route ? trip.route.replace('-', ' → ') : 'Route TBD'}</div>
+                        ${trip.route ? `<div style="font-size:0.8rem; color:var(--gray-600);">${b.pickup_location} → ${b.dropoff_location}</div>` : ''}
                     </div>
-                    <span class="badge badge-${b.booking_status}">${b.booking_status}</span>
+                    <span class="badge ${statusClass[b.booking_status] || 'badge-pending'}">${statusEmoji[b.booking_status] || '📋'} ${b.booking_status}</span>
                 </div>
                 <div class="booking-details">
                     <div><div class="label">Departure</div><div class="value">${departure}</div></div>
-                    <div><div class="label">Seats</div><div class="value">${b.number_of_seats}</div></div>
+                    <div><div class="label">Passengers</div><div class="value">${b.number_of_seats}</div></div>
                     <div><div class="label">Total</div><div class="value">${formatCurrency(b.total_price)}</div></div>
                     <div><div class="label">Payment</div><div class="value" style="text-transform:capitalize;">${b.payment_method} · ${b.payment_status}</div></div>
                 </div>
                 <div class="booking-actions">
                     ${canCancel ? `<button class="btn btn-danger btn-sm" data-cancel="${b.id}">Cancel Trip</button>` : ''}
-                    ${canTrack ? `<button class="btn btn-navy btn-sm" data-track="${b.id}" data-driver="${trip.drivers.id}">Track Driver</button>` : ''}
-                    ${canReview ? `<button class="btn btn-primary btn-sm" data-review="${b.id}" data-driver-id="${trip.drivers ? trip.drivers.id : ''}">Leave a Review</button>` : ''}
+                    ${canTrack ? `<button class="btn btn-navy btn-sm" data-track="${b.id}" data-driver="${trip.drivers.id}">📍 Track Driver</button>` : ''}
+                    ${canReview ? `<button class="btn btn-primary btn-sm" data-review="${b.id}" data-driver-id="${trip.drivers ? trip.drivers.id : ''}">⭐ Leave a Review</button>` : ''}
                     ${alreadyReviewed ? `<span class="review-note">✓ Review submitted</span>` : ''}
                 </div>
                 <div class="tracking-panel" id="tracking-${b.id}">
@@ -203,7 +262,6 @@ function toggleTracking(bookingId, driverId) {
     const panel = document.getElementById(`tracking-${bookingId}`);
     const isOpen = panel.classList.contains('open');
 
-    // Close any other open tracking panel first
     if (DashboardState.openTrackingId && DashboardState.openTrackingId !== bookingId) {
         const prev = document.getElementById(`tracking-${DashboardState.openTrackingId}`);
         if (prev) prev.classList.remove('open');
@@ -220,7 +278,6 @@ function toggleTracking(bookingId, driverId) {
     panel.classList.add('open');
     DashboardState.openTrackingId = bookingId;
 
-    // Initialize a fresh map instance for this panel each time it's opened
     setTimeout(() => {
         MapManager.map = null;
         MapManager.driverMarker = null;
@@ -239,3 +296,89 @@ function setupHandlers() {
         });
     });
 }
+
+/* =====================================================================
+   REAL-TIME NOTIFICATIONS
+   ===================================================================== */
+
+function setupRealTimeNotifications(userId) {
+    // Subscribe to changes on bookings table for this user
+    DashboardState.subscription = supabaseClient
+        .channel('bookings-changes')
+        .on(
+            'postgres_changes',
+            {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'bookings',
+                filter: `user_id=eq.${userId}`
+            },
+            (payload) => {
+                const booking = payload.new;
+                const oldStatus = payload.old.booking_status;
+                const newStatus = booking.booking_status;
+                
+                // Only notify on status change
+                if (oldStatus !== newStatus) {
+                    handleBookingStatusChange(booking, oldStatus, newStatus);
+                }
+            }
+        )
+        .subscribe();
+}
+
+function handleBookingStatusChange(booking, oldStatus, newStatus) {
+    const statusMessages = {
+        'confirmed': {
+            title: '✅ Booking Confirmed!',
+            body: `Your booking ${booking.booking_reference} has been confirmed. Your driver will be assigned soon.`
+        },
+        'completed': {
+            title: '🎉 Trip Completed!',
+            body: `Your trip ${booking.booking_reference} has been completed. Please leave a review!`
+        },
+        'cancelled': {
+            title: '❌ Booking Cancelled',
+            body: `Your booking ${booking.booking_reference} has been cancelled.`
+        }
+    };
+
+    const notification = statusMessages[newStatus];
+    if (!notification) return;
+
+    // Show browser notification
+    if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification(notification.title, {
+            body: notification.body,
+            icon: '/assets/logo.png'
+        });
+    }
+
+    // Play sound
+    playNotificationSound();
+
+    // Show toast
+    showToast(`${notification.title} - ${notification.body}`, 'success');
+
+    // Update the bookings list
+    loadBookings(DashboardState.profile.id);
+}
+
+function playNotificationSound() {
+    try {
+        const audio = document.getElementById('notificationSound');
+        if (audio) {
+            audio.currentTime = 0;
+            audio.play().catch(() => {});
+        }
+    } catch (e) {
+        // Silently fail if audio can't play
+    }
+}
+
+// Request notification permission when user interacts
+document.addEventListener('click', () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission();
+    }
+});
