@@ -13,6 +13,7 @@ const APP_CONFIG = {
     companyName: 'Luu Travels & Logistics',
     tagline: 'Moving People. Delivering Trust.',
     phone: '076 845 7061',
+    whatsappNumber: '27768457061', // WhatsApp number with country code, no +
     email: 'LuuTravels611@gmail.com',
     address: 'Windmill Park Ext 32, Boksburg, Gauteng, South Africa',
     pricePerKm: 2.50,
