@@ -9,7 +9,9 @@ const BookingState = {
     routeFilter: 'all',
     seats: 1,
     paymentMethod: 'cash',
-    distance: 0
+    distance: 0,
+    selectedDate: null,
+    selectedTime: null
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -19,7 +21,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     MapManager.init('booking-map');
     setupMapClicks();
-    await loadTrips();
+    await loadTimeSlots();
     setupUIHandlers();
 });
 
@@ -89,11 +91,119 @@ async function handleAddressSearch(which) {
     }
 }
 
-async function loadTrips() {
+async function loadTimeSlots() {
+    const { data, error } = await supabaseClient
+        .from('time_slots')
+        .select('*')
+        .eq('is_active', true)
+        .order('route')
+        .order('departure_time');
+
+    if (error) {
+        showToast('Could not load time slots: ' + error.message, 'error');
+        return;
+    }
+
+    renderTimeSlots(data || []);
+}
+
+function renderTimeSlots(slots) {
+    const container = document.getElementById('timeSlotContainer');
+    const route = BookingState.routeFilter;
+
+    const filtered = route === 'all' 
+        ? slots 
+        : slots.filter(s => s.route === route);
+
+    if (filtered.length === 0) {
+        container.innerHTML = `
+            <div class="trip-empty">No time slots available for this route. Please check back later.</div>
+        `;
+        return;
+    }
+
+    // Group by route for display
+    const grouped = {};
+    filtered.forEach(slot => {
+        if (!grouped[slot.route]) grouped[slot.route] = [];
+        grouped[slot.route].push(slot);
+    });
+
+    let html = '';
+    for (const [route, times] of Object.entries(grouped)) {
+        html += `<div style="margin-bottom:16px;">
+            <h4 style="font-size:0.9rem; color:var(--primary); margin-bottom:8px;">${route.replace('-', ' → ')}</h4>
+            <div style="display:flex; flex-wrap:wrap; gap:8px;">
+                ${times.map(slot => `
+                    <button class="time-slot-chip ${BookingState.selectedTime === slot.id ? 'active' : ''}" 
+                            data-slot-id="${slot.id}" 
+                            data-route="${slot.route}" 
+                            data-time="${slot.departure_time}"
+                            style="padding:8px 16px; border-radius:999px; border:1.5px solid var(--gray-200); 
+                                   background:${BookingState.selectedTime === slot.id ? 'var(--primary)' : 'var(--secondary)'};
+                                   color:${BookingState.selectedTime === slot.id ? 'var(--secondary)' : 'var(--gray-600)'};
+                                   cursor:pointer; font-weight:600; font-size:0.85rem;">
+                        ${slot.departure_time}
+                    </button>
+                `).join('')}
+            </div>
+        </div>`;
+    }
+
+    container.innerHTML = html;
+
+    // Add click handlers for time slots
+    container.querySelectorAll('.time-slot-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.time-slot-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            BookingState.selectedTime = btn.dataset.slotId;
+            document.getElementById('selectedTimeDisplay').textContent = btn.dataset.time;
+            document.getElementById('selectedTimeDisplay').style.color = 'var(--success)';
+            loadTripsForDateAndTime();
+        });
+    });
+}
+
+async function loadTripsForDateAndTime() {
+    const dateInput = document.getElementById('tripDate');
+    const selectedDate = dateInput.value;
+    
+    if (!selectedDate) {
+        document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a travel date first.</div>';
+        return;
+    }
+
+    if (!BookingState.selectedTime) {
+        document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a departure time slot first.</div>';
+        return;
+    }
+
+    // Get the selected time slot to know the route
+    const { data: slotData } = await supabaseClient
+        .from('time_slots')
+        .select('route')
+        .eq('id', BookingState.selectedTime)
+        .single();
+
+    if (!slotData) {
+        document.getElementById('tripList').innerHTML = '<div class="trip-empty">Invalid time slot selected.</div>';
+        return;
+    }
+
+    // Build the departure time range (the whole day of selected date)
+    const startDate = new Date(selectedDate);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(selectedDate);
+    endDate.setHours(23, 59, 59, 999);
+
+    // Find trips for this route on the selected date
     const { data, error } = await supabaseClient
         .from('trips')
         .select('*, drivers(full_name, vehicle_model, vehicle_color, phone)')
-        .eq('status', 'scheduled')
+        .eq('route', slotData.route)
+        .gte('departure_time', startDate.toISOString())
+        .lte('departure_time', endDate.toISOString())
         .gt('available_seats', 0)
         .order('departure_time', { ascending: true });
 
@@ -101,22 +211,25 @@ async function loadTrips() {
         showToast('Could not load trips: ' + error.message, 'error');
         return;
     }
+
     BookingState.trips = data || [];
-    renderTrips();
+    renderTripsForDate();
 }
 
-function renderTrips() {
+function renderTripsForDate() {
     const list = document.getElementById('tripList');
-    const filtered = BookingState.routeFilter === 'all'
-        ? BookingState.trips
-        : BookingState.trips.filter(t => t.route === BookingState.routeFilter);
 
-    if (filtered.length === 0) {
-        list.innerHTML = '<div class="trip-empty">No trips available for this route right now. Please check back later.</div>';
+    if (BookingState.trips.length === 0) {
+        list.innerHTML = `
+            <div class="trip-empty">
+                No trips available for this route on the selected date. 
+                <br><small style="color:var(--gray-400);">Please try another date or time slot.</small>
+            </div>
+        `;
         return;
     }
 
-    list.innerHTML = filtered.map(trip => {
+    list.innerHTML = BookingState.trips.map(trip => {
         const departure = new Date(trip.departure_time);
         const driverName = trip.drivers ? trip.drivers.full_name : 'To be assigned';
         const vehicle = trip.drivers ? `${trip.drivers.vehicle_color} ${trip.drivers.vehicle_model}` : 'N/A';
@@ -163,15 +276,33 @@ function updatePriceSummary() {
 }
 
 function setupUIHandlers() {
+    // Route filter chips
     document.querySelectorAll('.route-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
+        chip.addEventListener('click', async () => {
             document.querySelectorAll('.route-chip').forEach(c => c.classList.remove('active'));
             chip.classList.add('active');
             BookingState.routeFilter = chip.dataset.route;
-            renderTrips();
+            BookingState.selectedTime = null;
+            document.getElementById('selectedTimeDisplay').textContent = 'None selected';
+            document.getElementById('selectedTimeDisplay').style.color = 'var(--gray-400)';
+            document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a travel date and time slot.</div>';
+            document.getElementById('bookingFormCard').style.display = 'none';
+            await loadTimeSlots();
         });
     });
 
+    // Date picker
+    document.getElementById('tripDate').addEventListener('change', () => {
+        BookingState.selectedTrip = null;
+        document.getElementById('bookingFormCard').style.display = 'none';
+        if (BookingState.selectedTime) {
+            loadTripsForDateAndTime();
+        } else {
+            document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a departure time slot first.</div>';
+        }
+    });
+
+    // Seat controls
     document.getElementById('seatMinus').addEventListener('click', () => {
         if (BookingState.seats > 1) { BookingState.seats--; document.getElementById('seatCount').value = BookingState.seats; updatePriceSummary(); }
     });
@@ -180,6 +311,7 @@ function setupUIHandlers() {
         if (BookingState.seats < max) { BookingState.seats++; document.getElementById('seatCount').value = BookingState.seats; updatePriceSummary(); }
     });
 
+    // Payment options
     document.querySelectorAll('.payment-option').forEach(opt => {
         opt.addEventListener('click', () => {
             if (opt.dataset.method === 'card') {
