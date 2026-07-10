@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile | Luu Travels & Logistics</title>
+<link rel="icon" type="image/png" href="../assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<link rel="stylesheet" href="../css/profile.css">
+</head>
+<body class="profile-page">
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../index.html" class="brand">
+            <img src="../assets/logo.png" alt="Luu Travels logo">
+            <span class="brand-name">Luu Travels <span>& Logistics</span></span>
+        </a>
+        <div class="nav-actions">
+            <button class="btn btn-outline btn-sm" id="logoutBtn" style="color:var(--secondary); border-color:var(--secondary);">Logout</button>
+        </div>
+    </div>
+</nav>
+
+<header class="profile-header">
+    <div class="container">
+        <h1>My Profile</h1>
+        <p>Manage your personal information.</p>
+    </div>
+</header>
+
+<div class="profile-body">
+    <div class="profile-card">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <h2 id="profileName">—</h2>
+        <p class="profile-email" id="profileEmail">—</p>
+        
+        <div class="profile-details">
+            <div class="profile-detail-item">
+                <span class="detail-label">📱 Phone</span>
+                <span class="detail-value" id="profilePhone">—</span>
+            </div>
+            <div class="profile-detail-item">
+                <span class="detail-label">📅 Member Since</span>
+                <span class="detail-value" id="profileSince">—</span>
+            </div>
+            <div class="profile-detail-item">
+                <span class="detail-label">📊 Total Bookings</span>
+                <span class="detail-value" id="totalBookings">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM NAVIGATION MENU - ALWAYS VISIBLE -->
+<nav class="bottom-nav" id="bottomNav">
+    <a href="dashboard.html" class="bottom-nav-item">
+        <span class="bottom-nav-icon">📋</span>
+        <span class="bottom-nav-label">Dashboard</span>
+    </a>
+    <a href="booking.html" class="bottom-nav-item">
+        <span class="bottom-nav-icon">🚐</span>
+        <span class="bottom-nav-label">Book Trip</span>
+    </a>
+    <a href="profile.html" class="bottom-nav-item active">
+        <span class="bottom-nav-icon">👤</span>
+        <span class="bottom-nav-label">Profile</span>
+    </a>
+    <a href="#" class="bottom-nav-item" id="bottomLogout">
+        <span class="bottom-nav-icon">🚪</span>
+        <span class="bottom-nav-label">Logout</span>
+    </a>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script src="../js/profile.js"></script>
+</body>
+</html>
