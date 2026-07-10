@@ -2,7 +2,11 @@
    LUU TRAVELS & LOGISTICS - USER DASHBOARD STYLES
    ===================================================================== */
 
-.dash-page { background: var(--gray-100); min-height: 100vh; }
+.dash-page { 
+    background: var(--gray-100); 
+    min-height: 100vh; 
+    padding-bottom: 80px; /* Space for bottom nav */
+}
 .dash-header { background: var(--primary); color: var(--secondary); padding: 40px 0; }
 .dash-header .container { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 .dash-welcome h1 { color: var(--secondary); font-size: 1.5rem; }
@@ -23,46 +27,79 @@
 .dash-profile-info .label { font-size: 0.75rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
 .dash-profile-info .value { font-weight: 600; color: var(--dark-text); margin-top: 2px; }
 
-.dash-tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.dash-tabs { 
+    display: flex; 
+    gap: 8px; 
+    margin-bottom: 20px; 
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 4px 0;
+    -webkit-overflow-scrolling: touch;
+}
 .dash-tab {
-    padding: 10px 20px; border-radius: 999px; border: 1.5px solid var(--gray-200); background: var(--secondary);
-    font-weight: 600; font-size: 0.85rem; cursor: pointer; color: var(--gray-600);
+    padding: 8px 16px; 
+    border-radius: 999px; 
+    border: 1.5px solid var(--gray-200); 
+    background: var(--secondary);
+    font-weight: 600; 
+    font-size: 0.78rem; 
+    cursor: pointer; 
+    color: var(--gray-600);
     transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 .dash-tab:hover { border-color: var(--accent); }
 .dash-tab.active { background: var(--primary); color: var(--secondary); border-color: var(--primary); }
 
 .bookings-list { display: flex; flex-direction: column; gap: 16px; }
-.booking-card { background: var(--secondary); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; transition: transform 0.2s ease; }
-.booking-card:hover { transform: translateY(-2px); }
-.booking-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
-.booking-ref { font-family: var(--font-display); font-weight: 700; color: var(--primary); font-size: 1.05rem; }
-.booking-route { color: var(--gray-600); font-size: 0.88rem; margin-top: 2px; }
-.booking-details { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin: 14px 0; }
-.booking-details .label { font-size: 0.72rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
-.booking-details .value { font-weight: 600; font-size: 0.9rem; margin-top: 2px; }
-.booking-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.booking-card { 
+    background: var(--secondary); 
+    border-radius: var(--radius); 
+    box-shadow: var(--shadow); 
+    padding: 16px; 
+    transition: transform 0.2s ease;
+    border-left: 4px solid var(--gray-300);
+}
+.booking-card.status-pending { border-left-color: #D4941A; }
+.booking-card.status-confirmed { border-left-color: var(--success); }
+.booking-card.status-completed { border-left-color: var(--primary); }
+.booking-card.status-cancelled { border-left-color: var(--danger); }
 
-.tracking-panel { display: none; margin-top: 16px; border-radius: 10px; overflow: hidden; border: 1px solid var(--gray-200); }
+.booking-card:hover { transform: translateY(-2px); }
+.booking-card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 6px; }
+.booking-ref { font-family: var(--font-display); font-weight: 700; color: var(--primary); font-size: 0.95rem; }
+.booking-route { color: var(--gray-600); font-size: 0.82rem; margin-top: 2px; }
+.booking-details { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+    gap: 10px; 
+    margin: 10px 0; 
+}
+.booking-details .label { font-size: 0.65rem; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; }
+.booking-details .value { font-weight: 600; font-size: 0.85rem; margin-top: 2px; }
+.booking-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+
+.tracking-panel { display: none; margin-top: 14px; border-radius: 10px; overflow: hidden; border: 1px solid var(--gray-200); }
 .tracking-panel.open { display: block; }
 #tracking-map { height: 320px; width: 100%; }
 
-.empty-state { text-align: center; padding: 60px 20px; color: var(--gray-600); }
-.empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
-.empty-state h3 { margin-bottom: 8px; color: var(--primary); }
+.empty-state { text-align: center; padding: 40px 20px; color: var(--gray-600); }
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+.empty-state h3 { margin-bottom: 6px; color: var(--primary); font-size: 1.1rem; }
 
-.star-picker { display: flex; gap: 8px; font-size: 2rem; }
+.star-picker { display: flex; gap: 8px; font-size: 1.8rem; }
 .star-picker span { color: var(--gray-200); cursor: pointer; transition: color 0.1s ease; }
 .star-picker span.active { color: var(--accent); }
 
-.review-note { font-size: 0.82rem; color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.review-note { font-size: 0.78rem; color: var(--success); font-weight: 600; display: flex; align-items: center; gap: 6px; }
 
 /* Badge styles */
 .badge { 
     display: inline-block; 
-    padding: 4px 14px; 
+    padding: 3px 12px; 
     border-radius: 999px; 
-    font-size: 0.78rem; 
+    font-size: 0.7rem; 
     font-weight: 600;
     text-transform: capitalize;
 }
@@ -71,29 +108,106 @@
 .badge-completed { background: rgba(17,28,90,0.1); color: var(--primary); }
 .badge-cancelled { background: rgba(220,53,69,0.15); color: var(--danger); }
 
-/* Notification permission toast */
-.notification-prompt {
-    background: var(--gray-100);
-    border: 1px solid var(--gray-200);
-    border-radius: var(--radius);
-    padding: 16px 20px;
-    margin-bottom: 20px;
+/* =====================================================================
+   BOTTOM NAVIGATION - ALWAYS VISIBLE ON MOBILE
+   ===================================================================== */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--secondary);
+    border-top: 1px solid var(--gray-200);
     display: flex;
-    justify-content: space-between;
+    justify-content: space-around;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 12px;
+    padding: 8px 0 env(safe-area-inset-bottom, 8px) 0;
+    z-index: 1000;
+    box-shadow: 0 -4px 15px rgba(0,0,0,0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
-.notification-prompt p {
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    padding: 4px 12px;
+    border-radius: 8px;
+    min-width: 56px;
+    transition: all 0.2s ease;
+    position: relative;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+}
+
+.bottom-nav-icon {
+    font-size: 1.4rem;
+    line-height: 1.4;
+}
+
+.bottom-nav-label {
+    font-size: 0.6rem;
+    font-weight: 600;
     color: var(--gray-600);
-    font-size: 0.9rem;
+    margin-top: 2px;
+    transition: color 0.2s ease;
+    text-align: center;
 }
-.notification-prompt .btn-sm {
-    padding: 6px 18px;
+
+.bottom-nav-item.active .bottom-nav-label {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.bottom-nav-item.active .bottom-nav-icon {
+    transform: scale(1.05);
+}
+
+/* Active indicator dot */
+.bottom-nav-item.active::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 0 0 3px 3px;
+}
+
+/* Badge on bottom nav */
+.bottom-nav-badge {
+    position: absolute;
+    top: -2px;
+    right: 4px;
+    background: var(--danger);
+    color: white;
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 999px;
+    min-width: 16px;
+    text-align: center;
 }
 
 @media (max-width: 768px) {
     .dash-tabs { gap: 6px; }
-    .dash-tab { padding: 8px 14px; font-size: 0.78rem; }
+    .dash-tab { padding: 6px 12px; font-size: 0.7rem; }
     .booking-card-top { flex-direction: column; }
+    .booking-card { padding: 14px; }
+    .booking-details { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 769px) {
+    .bottom-nav {
+        display: none !important;
+    }
+    .dash-page {
+        padding-bottom: 0;
+    }
 }
