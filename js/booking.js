@@ -1,4 +1,32 @@
 /* =====================================================================
+   MOBILE MENU - Added to booking.js
+   ===================================================================== */
+function setupMobileMenu() {
+    const hamburger = document.getElementById('hamburgerBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('open');
+        });
+
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                mobileMenu.classList.remove('open');
+            });
+        });
+    }
+}
+
+// Call this in DOMContentLoaded
+document.addEventListener('DOMContentLoaded', async () => {
+    // ... existing code ...
+    setupMobileMenu();
+    // ... rest of code ...
+});
+/* =====================================================================
    LUU TRAVELS & LOGISTICS - BOOKING MANAGER
    ===================================================================== */
 
