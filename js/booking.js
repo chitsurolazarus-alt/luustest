@@ -4,15 +4,18 @@
 
 const BookingState = {
     currentUser: null,
-    trips: [],
-    selectedTrip: null,
     routeFilter: 'all',
     seats: 1,
-    paymentMethod: 'cash',
     distance: 0,
     selectedDate: null,
-    selectedTime: null
+    selectedTime: null,
+    pickupAddress: null,
+    dropoffAddress: null,
+    pickupCoords: null,
+    dropoffCoords: null
 };
+
+const WHATSAPP_NUMBER = '27768457061'; // South African number without +
 
 document.addEventListener('DOMContentLoaded', async () => {
     const user = await AuthManager.requireAuth('login.html');
@@ -23,34 +26,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupMapClicks();
     await loadTimeSlots();
     setupUIHandlers();
-    
-    // Trigger initial load
-    loadTripsForDateAndTime();
 });
 
-// Map click handler: first click sets pickup, second sets dropoff, third click resets and starts over
+// Map click handler
 let clickStage = 'pickup';
 function setupMapClicks() {
-    MapManager.map.on('click', (e) => {
+    MapManager.map.on('click', async (e) => {
         const { lat, lng } = e.latlng;
         if (clickStage === 'pickup') {
             MapManager.setPickup(lat, lng);
             clickStage = 'dropoff';
+            // Reverse geocode to get address
+            const address = await reverseGeocode(lat, lng);
+            document.getElementById('pickupSearch').value = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            BookingState.pickupAddress = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            BookingState.pickupCoords = { lat, lng };
         } else if (clickStage === 'dropoff') {
             MapManager.setDropoff(lat, lng);
             clickStage = 'done';
+            const address = await reverseGeocode(lat, lng);
+            document.getElementById('dropoffSearch').value = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            BookingState.dropoffAddress = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
+            BookingState.dropoffCoords = { lat, lng };
+            calculatePrice();
         } else {
             MapManager.clearAll();
-            MapManager.setPickup(lat, lng);
-            clickStage = 'dropoff';
+            clickStage = 'pickup';
+            document.getElementById('pickupSearch').value = '';
+            document.getElementById('dropoffSearch').value = '';
+            BookingState.pickupAddress = null;
+            BookingState.dropoffAddress = null;
+            BookingState.distance = 0;
+            document.getElementById('distanceValue').textContent = '— km';
+            document.getElementById('estimatedPriceValue').textContent = 'R0.00';
+            document.getElementById('distanceDisplay').textContent = '— km';
+            document.getElementById('totalPrice').textContent = 'R0.00';
         }
-    });
-
-    document.addEventListener('routeUpdated', (e) => {
-        BookingState.distance = e.detail.distance;
-        document.getElementById('distanceValue').textContent = `${e.detail.distance.toFixed(1)} km`;
-        const estimated = e.detail.distance * APP_CONFIG.pricePerKm;
-        document.getElementById('estimatedPriceValue').textContent = formatCurrency(estimated);
     });
 
     document.getElementById('clearMapBtn').addEventListener('click', () => {
@@ -58,14 +69,30 @@ function setupMapClicks() {
         clickStage = 'pickup';
         document.getElementById('pickupSearch').value = '';
         document.getElementById('dropoffSearch').value = '';
+        BookingState.pickupAddress = null;
+        BookingState.dropoffAddress = null;
+        BookingState.distance = 0;
         document.getElementById('distanceValue').textContent = '— km';
         document.getElementById('estimatedPriceValue').textContent = 'R0.00';
+        document.getElementById('distanceDisplay').textContent = '— km';
+        document.getElementById('totalPrice').textContent = 'R0.00';
     });
 
     document.getElementById('pickupSearchBtn').addEventListener('click', () => handleAddressSearch('pickup'));
     document.getElementById('dropoffSearchBtn').addEventListener('click', () => handleAddressSearch('dropoff'));
     document.getElementById('pickupSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddressSearch('pickup'); } });
     document.getElementById('dropoffSearch').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddressSearch('dropoff'); } });
+}
+
+async function reverseGeocode(lat, lng) {
+    try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.display_name || null;
+    } catch (e) {
+        return null;
+    }
 }
 
 async function handleAddressSearch(which) {
@@ -82,9 +109,14 @@ async function handleAddressSearch(which) {
         if (which === 'pickup') {
             MapManager.setPickup(lat, lng);
             clickStage = 'dropoff';
+            BookingState.pickupAddress = query;
+            BookingState.pickupCoords = { lat, lng };
         } else {
             MapManager.setDropoff(lat, lng);
             clickStage = 'done';
+            BookingState.dropoffAddress = query;
+            BookingState.dropoffCoords = { lat, lng };
+            calculatePrice();
         }
     } catch (err) {
         showToast(err.message || 'Could not find that address.', 'error');
@@ -92,6 +124,25 @@ async function handleAddressSearch(which) {
         btn.disabled = false;
         btn.textContent = 'Find';
     }
+}
+
+function calculatePrice() {
+    if (!BookingState.pickupCoords || !BookingState.dropoffCoords) return;
+    
+    const distance = calculateDistanceKm(
+        BookingState.pickupCoords.lat,
+        BookingState.pickupCoords.lng,
+        BookingState.dropoffCoords.lat,
+        BookingState.dropoffCoords.lng
+    );
+    
+    BookingState.distance = distance;
+    const price = distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    
+    document.getElementById('distanceValue').textContent = `${distance.toFixed(1)} km`;
+    document.getElementById('estimatedPriceValue').textContent = formatCurrency(price);
+    document.getElementById('distanceDisplay').textContent = `${distance.toFixed(1)} km`;
+    document.getElementById('totalPrice').textContent = formatCurrency(price);
 }
 
 async function loadTimeSlots() {
@@ -149,7 +200,7 @@ function renderTimeSlots(slots) {
 
     if (filtered.length === 0) {
         container.innerHTML = `
-            <div class="trip-empty">No time slots available for this route. Please check back later.</div>
+            <div class="trip-empty">No time slots available for this route.</div>
         `;
         return;
     }
@@ -184,7 +235,6 @@ function renderTimeSlots(slots) {
 
     container.innerHTML = html;
 
-    // Add click handlers for time slots
     container.querySelectorAll('.time-slot-chip').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.time-slot-chip').forEach(b => b.classList.remove('active'));
@@ -192,122 +242,8 @@ function renderTimeSlots(slots) {
             BookingState.selectedTime = btn.dataset.slotId;
             document.getElementById('selectedTimeDisplay').textContent = btn.dataset.time;
             document.getElementById('selectedTimeDisplay').style.color = 'var(--success)';
-            loadTripsForDateAndTime();
         });
     });
-}
-
-async function loadTripsForDateAndTime() {
-    const dateInput = document.getElementById('tripDate');
-    const selectedDate = dateInput.value;
-    
-    if (!selectedDate) {
-        document.getElementById('tripList').innerHTML = '<div class="trip-empty">Please select a travel date first.</div>';
-        return;
-    }
-
-    // If no time slot selected, show all trips for the date
-    let routeFilter = null;
-    if (BookingState.selectedTime) {
-        const { data: slotData } = await supabaseClient
-            .from('time_slots')
-            .select('route')
-            .eq('id', BookingState.selectedTime)
-            .single();
-        if (slotData) {
-            routeFilter = slotData.route;
-        }
-    }
-
-    // Build the departure time range (the whole day of selected date)
-    const startDate = new Date(selectedDate);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(selectedDate);
-    endDate.setHours(23, 59, 59, 999);
-
-    // Build query
-    let query = supabaseClient
-        .from('trips')
-        .select('*, drivers(full_name, vehicle_model, vehicle_color, phone)')
-        .gte('departure_time', startDate.toISOString())
-        .lte('departure_time', endDate.toISOString())
-        .gt('available_seats', 0)
-        .order('departure_time', { ascending: true });
-
-    if (routeFilter) {
-        query = query.eq('route', routeFilter);
-    } else if (BookingState.routeFilter !== 'all') {
-        query = query.eq('route', BookingState.routeFilter);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-        showToast('Could not load trips: ' + error.message, 'error');
-        return;
-    }
-
-    BookingState.trips = data || [];
-    renderTripsForDate();
-}
-
-function renderTripsForDate() {
-    const list = document.getElementById('tripList');
-
-    if (BookingState.trips.length === 0) {
-        list.innerHTML = `
-            <div class="trip-empty">
-                No trips available for this route on the selected date. 
-                <br><small style="color:var(--gray-400);">Please try another date or time slot.</small>
-            </div>
-        `;
-        return;
-    }
-
-    list.innerHTML = BookingState.trips.map(trip => {
-        const departure = new Date(trip.departure_time);
-        const driverName = trip.drivers ? trip.drivers.full_name : 'To be assigned';
-        const vehicle = trip.drivers ? `${trip.drivers.vehicle_color} ${trip.drivers.vehicle_model}` : 'N/A';
-        return `
-            <div class="trip-card" data-trip-id="${trip.id}">
-                <div class="trip-card-top">
-                    <span class="trip-card-route">${trip.route.replace('-', ' → ')}</span>
-                    <span class="trip-card-price">${formatCurrency(trip.total_price)}</span>
-                </div>
-                <div class="trip-card-meta">
-                    <span>🕐 ${departure.toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                    <span>👤 ${driverName}</span>
-                    <span>🚐 ${vehicle}</span>
-                    <span>💺 ${trip.available_seats} seats left</span>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    list.querySelectorAll('.trip-card').forEach(card => {
-        card.addEventListener('click', () => selectTrip(card.dataset.tripId));
-    });
-}
-
-function selectTrip(tripId) {
-    BookingState.selectedTrip = BookingState.trips.find(t => t.id === tripId);
-    document.querySelectorAll('.trip-card').forEach(c => c.classList.toggle('selected', c.dataset.tripId === tripId));
-
-    const card = document.getElementById('bookingFormCard');
-    card.style.display = 'block';
-    BookingState.seats = 1;
-    document.getElementById('seatCount').value = 1;
-    document.getElementById('seatsAvailableLabel').textContent = `of ${BookingState.selectedTrip.available_seats} available`;
-    updatePriceSummary();
-    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function updatePriceSummary() {
-    if (!BookingState.selectedTrip) return;
-    const perSeat = Number(BookingState.selectedTrip.total_price);
-    document.getElementById('pricePerSeat').textContent = formatCurrency(perSeat);
-    document.getElementById('seatsSummary').textContent = BookingState.seats;
-    document.getElementById('totalPrice').textContent = formatCurrency(perSeat * BookingState.seats);
 }
 
 function setupUIHandlers() {
@@ -321,7 +257,6 @@ function setupUIHandlers() {
             document.getElementById('selectedTimeDisplay').textContent = 'None selected';
             document.getElementById('selectedTimeDisplay').style.color = 'var(--gray-400)';
             await loadTimeSlots();
-            loadTripsForDateAndTime();
         });
     });
 
@@ -330,36 +265,27 @@ function setupUIHandlers() {
     const today = new Date().toISOString().split('T')[0];
     dateInput.setAttribute('min', today);
     dateInput.value = today;
-    
-    dateInput.addEventListener('change', () => {
-        BookingState.selectedTrip = null;
-        document.getElementById('bookingFormCard').style.display = 'none';
-        loadTripsForDateAndTime();
-    });
 
     // Seat controls
     document.getElementById('seatMinus').addEventListener('click', () => {
-        if (BookingState.seats > 1) { BookingState.seats--; document.getElementById('seatCount').value = BookingState.seats; updatePriceSummary(); }
+        if (BookingState.seats > 1) { 
+            BookingState.seats--; 
+            document.getElementById('seatCount').value = BookingState.seats;
+            document.getElementById('passengerCount').textContent = BookingState.seats;
+            calculatePrice();
+        }
     });
     document.getElementById('seatPlus').addEventListener('click', () => {
-        const max = Math.min(APP_CONFIG.maxSeats, BookingState.selectedTrip ? BookingState.selectedTrip.available_seats : APP_CONFIG.maxSeats);
-        if (BookingState.seats < max) { BookingState.seats++; document.getElementById('seatCount').value = BookingState.seats; updatePriceSummary(); }
+        if (BookingState.seats < 14) { 
+            BookingState.seats++; 
+            document.getElementById('seatCount').value = BookingState.seats;
+            document.getElementById('passengerCount').textContent = BookingState.seats;
+            calculatePrice();
+        }
     });
 
-    // Payment options
-    document.querySelectorAll('.payment-option').forEach(opt => {
-        opt.addEventListener('click', () => {
-            if (opt.dataset.method === 'card') {
-                showToast('Card payments are coming soon. Please select Cash for now.', 'info');
-                return;
-            }
-            document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
-            opt.classList.add('selected');
-            BookingState.paymentMethod = opt.dataset.method;
-        });
-    });
-
-    document.getElementById('confirmBookingBtn').addEventListener('click', confirmBooking);
+    // Confirm booking - WhatsApp
+    document.getElementById('confirmBookingBtn').addEventListener('click', confirmBookingViaWhatsApp);
 
     document.getElementById('logoutBtn').addEventListener('click', async () => {
         await AuthManager.logout();
@@ -367,44 +293,110 @@ function setupUIHandlers() {
     });
 }
 
-async function confirmBooking() {
-    if (!BookingState.selectedTrip) {
-        showToast('Please select a trip first.', 'error');
+async function confirmBookingViaWhatsApp() {
+    // Validate all required fields
+    if (!BookingState.selectedTime) {
+        showToast('Please select a departure time.', 'error');
         return;
     }
-    const trip = BookingState.selectedTrip;
-    const pickupLocation = MapManager.pickupMarker
-        ? `${MapManager.pickupMarker.getLatLng().lat.toFixed(5)}, ${MapManager.pickupMarker.getLatLng().lng.toFixed(5)}`
-        : trip.pickup_location;
-    const dropoffLocation = MapManager.dropoffMarker
-        ? `${MapManager.dropoffMarker.getLatLng().lat.toFixed(5)}, ${MapManager.dropoffMarker.getLatLng().lng.toFixed(5)}`
-        : trip.dropoff_location;
+    
+    if (!BookingState.pickupAddress || !BookingState.dropoffAddress) {
+        showToast('Please set both pickup and drop-off locations on the map.', 'error');
+        return;
+    }
 
-    const btn = document.getElementById('confirmBookingBtn');
-    btn.disabled = true;
-    btn.textContent = 'Booking...';
+    if (BookingState.distance === 0) {
+        showToast('Please set both pickup and drop-off locations to calculate distance.', 'error');
+        return;
+    }
 
+    // Get user profile
+    const user = BookingState.currentUser;
+    const { data: profile } = await supabaseClient
+        .from('users')
+        .select('full_name, phone')
+        .eq('id', user.id)
+        .single();
+
+    // Get time slot details
+    const { data: slotData } = await supabaseClient
+        .from('time_slots')
+        .select('route, departure_time')
+        .eq('id', BookingState.selectedTime)
+        .single();
+
+    const date = document.getElementById('tripDate').value;
+    const formattedDate = new Date(date).toLocaleDateString('en-ZA', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+
+    // Calculate total price
+    const totalPrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
+
+    // Build WhatsApp message
+    const message = `
+🚐 *NEW BOOKING - Luu Travels & Logistics*
+
+👤 *Customer:* ${profile?.full_name || 'Unknown'}
+📱 *Phone:* ${profile?.phone || 'Not provided'}
+📧 *Email:* ${user.email}
+
+📍 *Route:* ${slotData?.route?.replace('-', ' → ') || 'Unknown'}
+📅 *Date:* ${formattedDate}
+🕐 *Time:* ${slotData?.departure_time || 'Unknown'}
+
+📍 *Pickup:* ${BookingState.pickupAddress}
+📍 *Drop-off:* ${BookingState.dropoffAddress}
+
+📏 *Distance:* ${BookingState.distance.toFixed(1)} km
+👥 *Passengers:* ${BookingState.seats}
+💰 *Total Price:* R${totalPrice.toFixed(2)}
+
+📝 *Special Requests:* ${document.getElementById('specialRequests').value.trim() || 'None'}
+
+---
+*Please confirm this booking and arrange transport.*
+    `.trim();
+
+    // Encode message for WhatsApp URL
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+
+    // Save booking to database
     try {
         const { error } = await supabaseClient.from('bookings').insert([{
-            user_id: BookingState.currentUser.id,
-            trip_id: trip.id,
+            user_id: user.id,
+            trip_id: null, // No specific trip, just a booking request
             number_of_seats: BookingState.seats,
-            total_price: Number(trip.total_price) * BookingState.seats,
-            payment_method: BookingState.paymentMethod,
-            pickup_location: pickupLocation,
-            dropoff_location: dropoffLocation,
-            pickup_coordinates: MapManager.pickupMarker ? { lat: MapManager.pickupMarker.getLatLng().lat, lng: MapManager.pickupMarker.getLatLng().lng } : null,
-            dropoff_coordinates: MapManager.dropoffMarker ? { lat: MapManager.dropoffMarker.getLatLng().lat, lng: MapManager.dropoffMarker.getLatLng().lng } : null,
-            special_requests: document.getElementById('specialRequests').value.trim() || null
+            total_price: totalPrice,
+            payment_method: 'cash',
+            payment_status: 'pending',
+            booking_status: 'pending',
+            pickup_location: BookingState.pickupAddress,
+            dropoff_location: BookingState.dropoffAddress,
+            pickup_coordinates: BookingState.pickupCoords,
+            dropoff_coordinates: BookingState.dropoffCoords,
+            special_requests: document.getElementById('specialRequests').value.trim() || null,
+            booking_reference: `LUU-${Date.now().toString().slice(-8)}`
         }]);
 
         if (error) throw error;
 
-        showToast('Booking confirmed! Redirecting to your dashboard...', 'success');
-        setTimeout(() => window.location.href = 'dashboard.html', 1500);
+        showToast('Booking saved! Redirecting to WhatsApp...', 'success');
+        
+        // Redirect to WhatsApp after a short delay
+        setTimeout(() => {
+            window.open(whatsappUrl, '_blank');
+            // Also open a new tab to WhatsApp
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 500);
+        }, 1000);
+
     } catch (err) {
-        showToast(err.message || 'Booking failed. Please try again.', 'error');
-        btn.disabled = false;
-        btn.textContent = 'Confirm Booking';
+        showToast(err.message || 'Could not save booking. Please try again.', 'error');
     }
 }
