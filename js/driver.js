@@ -33,12 +33,17 @@ async function loadDriverRecord() {
         .from('drivers')
         .select('*')
         .eq('user_id', DriverState.authUser.id)
-        .single();
+        .maybeSingle();
 
     const body = document.getElementById('driverBody');
 
-    if (error || !data) {
-        body.innerHTML = '<div class="pending-banner">We could not find your driver profile. Please contact Luu Travels & Logistics support.</div>';
+    if (error) {
+        body.innerHTML = `<div class="pending-banner">Error loading driver profile: ${error.message}</div>`;
+        return;
+    }
+
+    if (!data) {
+        body.innerHTML = '<div class="pending-banner">No driver profile found. Please contact Luu Travels & Logistics support.</div>';
         return;
     }
 
@@ -145,7 +150,6 @@ function attachTripHandlers() {
             if (error) { showToast(error.message, 'error'); return; }
             showToast(newStatus === 'in-progress' ? 'Trip started.' : 'Trip marked as completed.', 'success');
             if (newStatus === 'completed') {
-                // Also mark bookings on this trip as completed so customers can review the trip
                 await supabaseClient.from('bookings').update({ booking_status: 'completed' }).eq('trip_id', btn.dataset.tripId).neq('booking_status', 'cancelled');
             }
             await loadAssignedTrips();
