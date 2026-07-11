@@ -12,7 +12,7 @@ const DashboardState = {
     subscription: null
 };
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', async function() {
     const user = await AuthManager.requireAuth('login.html');
     if (!user) return;
 
@@ -36,8 +36,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    LOGOUT - SIMPLE AND RELIABLE
    ===================================================================== */
 function setupLogout() {
-    // Desktop logout
-    const logoutBtn = document.getElementById('logoutBtn');
+    var logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.onclick = function(e) {
             e.preventDefault();
@@ -45,8 +44,7 @@ function setupLogout() {
         };
     }
 
-    // Mobile logout
-    const mobileLogout = document.getElementById('mobileLogout');
+    var mobileLogout = document.getElementById('mobileLogout');
     if (mobileLogout) {
         mobileLogout.onclick = function(e) {
             e.preventDefault();
@@ -57,13 +55,11 @@ function setupLogout() {
 
 async function doLogout() {
     try {
-        // Show loading state
-        const logoutBtn = document.getElementById('logoutBtn');
-        const mobileLogout = document.getElementById('mobileLogout');
+        var logoutBtn = document.getElementById('logoutBtn');
+        var mobileLogout = document.getElementById('mobileLogout');
         if (logoutBtn) logoutBtn.textContent = 'Logging out...';
         if (mobileLogout) mobileLogout.textContent = '⏳ Logging out...';
         
-        // Unsubscribe from real-time
         if (DashboardState.subscription) {
             try {
                 await DashboardState.subscription.unsubscribe();
@@ -71,19 +67,16 @@ async function doLogout() {
             DashboardState.subscription = null;
         }
         
-        // Sign out
-        const { error } = await supabaseClient.auth.signOut();
+        var { error } = await supabaseClient.auth.signOut();
         if (error) throw error;
         
-        // Clear local storage
         try {
             localStorage.clear();
+            sessionStorage.clear();
         } catch(e) {}
         
-        // Show message
         showToast('Logged out successfully!', 'success');
         
-        // Redirect after short delay
         setTimeout(function() {
             window.location.href = 'login.html';
         }, 500);
@@ -92,9 +85,8 @@ async function doLogout() {
         console.error('Logout error:', err);
         showToast('Error logging out. Please try again.', 'error');
         
-        // Reset button text
-        const logoutBtn = document.getElementById('logoutBtn');
-        const mobileLogout = document.getElementById('mobileLogout');
+        var logoutBtn = document.getElementById('logoutBtn');
+        var mobileLogout = document.getElementById('mobileLogout');
         if (logoutBtn) logoutBtn.textContent = 'Logout';
         if (mobileLogout) mobileLogout.textContent = '🚪 Logout';
     }
@@ -104,8 +96,8 @@ async function doLogout() {
    MOBILE MENU
    ===================================================================== */
 function setupMobileMenu() {
-    const hamburger = document.getElementById('hamburgerBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var mobileMenu = document.getElementById('mobileMenu');
 
     if (hamburger && mobileMenu) {
         hamburger.onclick = function() {
@@ -113,24 +105,25 @@ function setupMobileMenu() {
             mobileMenu.classList.toggle('open');
         };
 
-        mobileMenu.querySelectorAll('a').forEach(function(link) {
-            link.onclick = function() {
+        var links = mobileMenu.querySelectorAll('a');
+        for (var i = 0; i < links.length; i++) {
+            links[i].onclick = function() {
                 hamburger.classList.remove('active');
                 mobileMenu.classList.remove('open');
             };
-        });
+        }
     }
 }
 
 async function loadOwnReviews(userId) {
-    const { data, error } = await supabaseClient.from('reviews').select('booking_id').eq('user_id', userId);
+    var { data, error } = await supabaseClient.from('reviews').select('booking_id').eq('user_id', userId);
     if (!error && data) {
-        DashboardState.reviewedBookingIds = new Set(data.map(r => r.booking_id));
+        DashboardState.reviewedBookingIds = new Set(data.map(function(r) { return r.booking_id; }));
     }
 }
 
 function renderProfile() {
-    const p = DashboardState.profile;
+    var p = DashboardState.profile;
     document.getElementById('welcomeText').textContent = 'Welcome back, ' + p.full_name.split(' ')[0];
     document.getElementById('avatarInitial').textContent = p.full_name.charAt(0).toUpperCase();
     document.getElementById('profileName').textContent = p.full_name;
@@ -140,7 +133,7 @@ function renderProfile() {
 }
 
 async function loadBookings(userId) {
-    const { data, error } = await supabaseClient
+    var { data, error } = await supabaseClient
         .from('bookings')
         .select('*, trips(route, departure_time, pickup_location, dropoff_location, drivers(id, full_name, vehicle_model, vehicle_color, phone))')
         .eq('user_id', userId)
@@ -156,116 +149,127 @@ async function loadBookings(userId) {
 }
 
 function updateStatusCounts() {
-    const counts = {
+    var counts = {
         pending: 0,
         confirmed: 0,
         completed: 0,
         cancelled: 0
     };
     
-    DashboardState.bookings.forEach(function(b) {
+    for (var i = 0; i < DashboardState.bookings.length; i++) {
+        var b = DashboardState.bookings[i];
         if (counts[b.booking_status] !== undefined) {
             counts[b.booking_status]++;
         }
-    });
+    }
 
-    document.querySelectorAll('.dash-tab').forEach(function(tab) {
-        const status = tab.dataset.status;
+    var tabs = document.querySelectorAll('.dash-tab');
+    for (var j = 0; j < tabs.length; j++) {
+        var tab = tabs[j];
+        var status = tab.dataset.status;
         if (status !== 'all') {
-            const count = counts[status] || 0;
+            var count = counts[status] || 0;
             tab.textContent = tab.textContent.replace(/\(\d+\)/, '');
             tab.textContent = tab.textContent.trim() + ' (' + count + ')';
         } else {
             tab.textContent = '📋 All (' + DashboardState.bookings.length + ')';
         }
-    });
+    }
 }
 
 function renderBookings() {
-    const list = document.getElementById('bookingsList');
-    const filtered = DashboardState.statusFilter === 'all'
-        ? DashboardState.bookings
-        : DashboardState.bookings.filter(function(b) { return b.booking_status === DashboardState.statusFilter; });
+    var list = document.getElementById('bookingsList');
+    var filtered = [];
+    
+    if (DashboardState.statusFilter === 'all') {
+        filtered = DashboardState.bookings;
+    } else {
+        for (var i = 0; i < DashboardState.bookings.length; i++) {
+            if (DashboardState.bookings[i].booking_status === DashboardState.statusFilter) {
+                filtered.push(DashboardState.bookings[i]);
+            }
+        }
+    }
 
     if (filtered.length === 0) {
-        list.innerHTML = `
-            <div class="empty-state">
-                <div class="icon">📭</div>
-                <h3>No bookings found</h3>
-                <p style="color:var(--gray-600);">${DashboardState.statusFilter === 'all' ? 'You haven\'t made any bookings yet.' : 'You have no ' + DashboardState.statusFilter + ' bookings.'}</p>
-                <a href="booking.html" class="btn btn-primary" style="margin-top:16px;">🚐 Book a Trip</a>
-            </div>
-        `;
+        list.innerHTML = '<div class="empty-state"><div class="icon">📭</div><h3>No bookings found</h3><p style="color:var(--gray-600);">' + (DashboardState.statusFilter === 'all' ? 'You haven\'t made any bookings yet.' : 'You have no ' + DashboardState.statusFilter + ' bookings.') + '</p><a href="booking.html" class="btn btn-primary" style="margin-top:16px;">🚐 Book a Trip</a></div>';
         return;
     }
 
-    list.innerHTML = filtered.map(function(b) {
-        const trip = b.trips || {};
-        const departure = trip.departure_time ? new Date(trip.departure_time).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
-        const canCancel = b.booking_status === 'pending';
-        const canTrack = ['confirmed', 'completed'].includes(b.booking_status) && trip.drivers;
-        const canReview = b.booking_status === 'completed' && !DashboardState.reviewedBookingIds.has(b.id);
-        const alreadyReviewed = b.booking_status === 'completed' && DashboardState.reviewedBookingIds.has(b.id);
+    var html = '';
+    for (var j = 0; j < filtered.length; j++) {
+        var b = filtered[j];
+        var trip = b.trips || {};
+        var departure = trip.departure_time ? new Date(trip.departure_time).toLocaleString('en-ZA', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
+        var canCancel = b.booking_status === 'pending';
+        var canTrack = ['confirmed', 'completed'].includes(b.booking_status) && trip.drivers;
+        var canReview = b.booking_status === 'completed' && !DashboardState.reviewedBookingIds.has(b.id);
+        var alreadyReviewed = b.booking_status === 'completed' && DashboardState.reviewedBookingIds.has(b.id);
         
-        const statusEmoji = {
+        var statusEmoji = {
             'pending': '⏳',
             'confirmed': '✅',
             'completed': '🎉',
             'cancelled': '❌'
         };
 
-        const statusClass = {
+        var statusClass = {
             'pending': 'badge-pending',
             'confirmed': 'badge-confirmed',
             'completed': 'badge-completed',
             'cancelled': 'badge-cancelled'
         };
 
-        const paymentStatusClass = b.payment_status === 'paid' ? 'badge-confirmed' : 'badge-pending';
-        const paymentEmoji = b.payment_status === 'paid' ? '✅' : '⏳';
+        var paymentStatusClass = b.payment_status === 'paid' ? 'badge-confirmed' : 'badge-pending';
+        var paymentEmoji = b.payment_status === 'paid' ? '✅' : '⏳';
 
-        return `
-            <div class="booking-card status-${b.booking_status}">
-                <div class="booking-card-top">
-                    <div>
-                        <div class="booking-ref">${b.booking_reference}</div>
-                        <div class="booking-route">${trip.route ? trip.route.replace('-', ' → ') : 'Route TBD'}</div>
-                        ${b.pickup_location ? '<div style="font-size:0.75rem; color:var(--gray-600);">📍 ' + b.pickup_location + ' → ' + b.dropoff_location + '</div>' : ''}
-                    </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-                        <span class="badge ' + (statusClass[b.booking_status] || 'badge-pending') + '">' + (statusEmoji[b.booking_status] || '📋') + ' ' + b.booking_status + '</span>
-                        <span class="badge ' + paymentStatusClass + '" style="font-size:0.65rem;">' + paymentEmoji + ' ' + b.payment_status + '</span>
-                    </div>
-                </div>
-                <div class="booking-details">
-                    <div><div class="label">Departure</div><div class="value">' + departure + '</div></div>
-                    <div><div class="label">Passengers</div><div class="value">' + b.number_of_seats + '</div></div>
-                    <div><div class="label">Total</div><div class="value">' + formatCurrency(b.total_price) + '</div></div>
-                    <div><div class="label">Payment</div><div class="value" style="text-transform:capitalize; font-size:0.8rem;">' + b.payment_method + '</div></div>
-                </div>
-                <div class="booking-actions">
-                    ${canCancel ? '<button class="btn btn-danger btn-sm" data-cancel="' + b.id + '">Cancel</button>' : ''}
-                    ${canTrack ? '<button class="btn btn-navy btn-sm" data-track="' + b.id + '" data-driver="' + (trip.drivers ? trip.drivers.id : '') + '">📍 Track</button>' : ''}
-                    ${canReview ? '<button class="btn btn-primary btn-sm" data-review="' + b.id + '" data-driver-id="' + (trip.drivers ? trip.drivers.id : '') + '">⭐ Review</button>' : ''}
-                    ${alreadyReviewed ? '<span class="review-note">✓ Reviewed</span>' : ''}
-                    ${b.payment_status === 'paid' ? '<span class="review-note">💰 Paid</span>' : ''}
-                </div>
-                <div class="tracking-panel" id="tracking-${b.id}">
-                    <div id="tracking-map-${b.id}" style="height:320px;"></div>
-                </div>
-            </div>
-        `;
-    }).join('');
+        var routeDisplay = trip.route ? trip.route.replace('-', ' → ') : 'Route TBD';
+        var locationDisplay = b.pickup_location ? '<div style="font-size:0.75rem; color:var(--gray-600);">📍 ' + b.pickup_location + ' → ' + b.dropoff_location + '</div>' : '';
 
-    list.querySelectorAll('[data-cancel]').forEach(function(btn) {
-        btn.onclick = function() { cancelBooking(this.dataset.cancel); };
-    });
-    list.querySelectorAll('[data-track]').forEach(function(btn) {
-        btn.onclick = function() { toggleTracking(this.dataset.track, this.dataset.driver); };
-    });
-    list.querySelectorAll('[data-review]').forEach(function(btn) {
-        btn.onclick = function() { openReviewModal(this.dataset.review, this.dataset.driverId); };
-    });
+        var actionsHtml = '';
+        if (canCancel) actionsHtml += '<button class="btn btn-danger btn-sm" data-cancel="' + b.id + '">Cancel</button>';
+        if (canTrack) actionsHtml += '<button class="btn btn-navy btn-sm" data-track="' + b.id + '" data-driver="' + (trip.drivers ? trip.drivers.id : '') + '">📍 Track</button>';
+        if (canReview) actionsHtml += '<button class="btn btn-primary btn-sm" data-review="' + b.id + '" data-driver-id="' + (trip.drivers ? trip.drivers.id : '') + '">⭐ Review</button>';
+        if (alreadyReviewed) actionsHtml += '<span class="review-note">✓ Reviewed</span>';
+        if (b.payment_status === 'paid') actionsHtml += '<span class="review-note">💰 Paid</span>';
+
+        html += '<div class="booking-card status-' + b.booking_status + '">';
+        html += '<div class="booking-card-top">';
+        html += '<div><div class="booking-ref">' + b.booking_reference + '</div>';
+        html += '<div class="booking-route">' + routeDisplay + '</div>';
+        html += locationDisplay + '</div>';
+        html += '<div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">';
+        html += '<span class="badge ' + (statusClass[b.booking_status] || 'badge-pending') + '">' + (statusEmoji[b.booking_status] || '📋') + ' ' + b.booking_status + '</span>';
+        html += '<span class="badge ' + paymentStatusClass + '" style="font-size:0.65rem;">' + paymentEmoji + ' ' + b.payment_status + '</span>';
+        html += '</div></div>';
+        html += '<div class="booking-details">';
+        html += '<div><div class="label">Departure</div><div class="value">' + departure + '</div></div>';
+        html += '<div><div class="label">Passengers</div><div class="value">' + b.number_of_seats + '</div></div>';
+        html += '<div><div class="label">Total</div><div class="value">' + formatCurrency(b.total_price) + '</div></div>';
+        html += '<div><div class="label">Payment</div><div class="value" style="text-transform:capitalize; font-size:0.8rem;">' + b.payment_method + '</div></div>';
+        html += '</div>';
+        html += '<div class="booking-actions">' + actionsHtml + '</div>';
+        html += '<div class="tracking-panel" id="tracking-' + b.id + '">';
+        html += '<div id="tracking-map-' + b.id + '" style="height:320px;"></div>';
+        html += '</div></div>';
+    }
+
+    list.innerHTML = html;
+
+    var cancelBtns = list.querySelectorAll('[data-cancel]');
+    for (var k = 0; k < cancelBtns.length; k++) {
+        cancelBtns[k].onclick = function() { cancelBooking(this.dataset.cancel); };
+    }
+
+    var trackBtns = list.querySelectorAll('[data-track]');
+    for (var l = 0; l < trackBtns.length; l++) {
+        trackBtns[l].onclick = function() { toggleTracking(this.dataset.track, this.dataset.driver); };
+    }
+
+    var reviewBtns = list.querySelectorAll('[data-review]');
+    for (var m = 0; m < reviewBtns.length; m++) {
+        reviewBtns[m].onclick = function() { openReviewModal(this.dataset.review, this.dataset.driverId); };
+    }
 }
 
 function openReviewModal(bookingId, driverId) {
@@ -273,23 +277,34 @@ function openReviewModal(bookingId, driverId) {
     document.getElementById('reviewDriverId').value = driverId || '';
     document.getElementById('reviewComment').value = '';
     DashboardState.selectedRating = 0;
-    document.querySelectorAll('#starPicker span').forEach(function(s) { s.classList.remove('active'); });
+    var stars = document.querySelectorAll('#starPicker span');
+    for (var i = 0; i < stars.length; i++) {
+        stars[i].classList.remove('active');
+    }
     document.getElementById('reviewModal').classList.add('open');
 }
 
 function setupReviewModal(userId) {
-    document.querySelectorAll('#starPicker span').forEach(function(star) {
-        star.onclick = function() {
+    var stars = document.querySelectorAll('#starPicker span');
+    for (var i = 0; i < stars.length; i++) {
+        stars[i].onclick = function() {
             DashboardState.selectedRating = parseInt(this.dataset.star, 10);
-            document.querySelectorAll('#starPicker span').forEach(function(s) {
-                s.classList.toggle('active', parseInt(s.dataset.star, 10) <= DashboardState.selectedRating);
-            });
+            var allStars = document.querySelectorAll('#starPicker span');
+            for (var s = 0; s < allStars.length; s++) {
+                if (parseInt(allStars[s].dataset.star, 10) <= DashboardState.selectedRating) {
+                    allStars[s].classList.add('active');
+                } else {
+                    allStars[s].classList.remove('active');
+                }
+            }
         };
-    });
+    }
 
-    document.querySelectorAll('[data-close-review]').forEach(function(btn) {
-        btn.onclick = function() { document.getElementById('reviewModal').classList.remove('open'); };
-    });
+    var closeBtns = document.querySelectorAll('[data-close-review]');
+    for (var j = 0; j < closeBtns.length; j++) {
+        closeBtns[j].onclick = function() { document.getElementById('reviewModal').classList.remove('open'); };
+    }
+
     document.getElementById('reviewModal').onclick = function(e) {
         if (e.target.id === 'reviewModal') document.getElementById('reviewModal').classList.remove('open');
     };
@@ -300,15 +315,15 @@ function setupReviewModal(userId) {
             showToast('Please select a star rating.', 'error');
             return;
         }
-        const bookingId = document.getElementById('reviewBookingId').value;
-        const driverId = document.getElementById('reviewDriverId').value || null;
-        const comment = document.getElementById('reviewComment').value.trim();
+        var bookingId = document.getElementById('reviewBookingId').value;
+        var driverId = document.getElementById('reviewDriverId').value || null;
+        var comment = document.getElementById('reviewComment').value.trim();
 
-        const btn = document.getElementById('submitReviewBtn');
+        var btn = document.getElementById('submitReviewBtn');
         btn.disabled = true;
         btn.textContent = 'Submitting...';
 
-        const { error } = await supabaseClient.from('reviews').insert([{
+        var { error } = await supabaseClient.from('reviews').insert([{
             user_id: userId,
             booking_id: bookingId,
             driver_id: driverId,
@@ -334,7 +349,7 @@ function setupReviewModal(userId) {
 
 async function cancelBooking(bookingId) {
     if (!confirm('Are you sure you want to cancel this trip?')) return;
-    const { error } = await supabaseClient
+    var { error } = await supabaseClient
         .from('bookings')
         .update({ booking_status: 'cancelled' })
         .eq('id', bookingId);
@@ -344,16 +359,16 @@ async function cancelBooking(bookingId) {
         return;
     }
     showToast('Booking cancelled.', 'success');
-    const user = await AuthManager.getCurrentUser();
+    var user = await AuthManager.getCurrentUser();
     await loadBookings(user.id);
 }
 
 function toggleTracking(bookingId, driverId) {
-    const panel = document.getElementById('tracking-' + bookingId);
-    const isOpen = panel.classList.contains('open');
+    var panel = document.getElementById('tracking-' + bookingId);
+    var isOpen = panel.classList.contains('open');
 
     if (DashboardState.openTrackingId && DashboardState.openTrackingId !== bookingId) {
-        const prev = document.getElementById('tracking-' + DashboardState.openTrackingId);
+        var prev = document.getElementById('tracking-' + DashboardState.openTrackingId);
         if (prev) prev.classList.remove('open');
         MapManager.stopTracking();
     }
@@ -377,14 +392,18 @@ function toggleTracking(bookingId, driverId) {
 }
 
 function setupHandlers() {
-    document.querySelectorAll('.dash-tab').forEach(function(tab) {
-        tab.onclick = function() {
-            document.querySelectorAll('.dash-tab').forEach(function(t) { t.classList.remove('active'); });
+    var tabs = document.querySelectorAll('.dash-tab');
+    for (var i = 0; i < tabs.length; i++) {
+        tabs[i].onclick = function() {
+            var allTabs = document.querySelectorAll('.dash-tab');
+            for (var t = 0; t < allTabs.length; t++) {
+                allTabs[t].classList.remove('active');
+            }
             this.classList.add('active');
             DashboardState.statusFilter = this.dataset.status;
             renderBookings();
         };
-    });
+    }
 }
 
 /* =====================================================================
@@ -403,11 +422,11 @@ function setupRealTimeNotifications(userId) {
                 filter: 'user_id=eq.' + userId
             },
             function(payload) {
-                const booking = payload.new;
-                const oldStatus = payload.old.booking_status;
-                const newStatus = booking.booking_status;
-                const oldPayment = payload.old.payment_status;
-                const newPayment = booking.payment_status;
+                var booking = payload.new;
+                var oldStatus = payload.old.booking_status;
+                var newStatus = booking.booking_status;
+                var oldPayment = payload.old.payment_status;
+                var newPayment = booking.payment_status;
                 
                 if (oldStatus !== newStatus) {
                     handleBookingStatusChange(booking, oldStatus, newStatus);
@@ -421,7 +440,7 @@ function setupRealTimeNotifications(userId) {
 }
 
 function handleBookingStatusChange(booking, oldStatus, newStatus) {
-    const statusMessages = {
+    var statusMessages = {
         'confirmed': {
             title: '✅ Booking Confirmed!',
             body: 'Your booking ' + booking.booking_reference + ' has been confirmed.'
@@ -436,7 +455,7 @@ function handleBookingStatusChange(booking, oldStatus, newStatus) {
         }
     };
 
-    const notification = statusMessages[newStatus];
+    var notification = statusMessages[newStatus];
     if (!notification) return;
 
     if ('Notification' in window && Notification.permission === 'granted') {
@@ -452,8 +471,8 @@ function handleBookingStatusChange(booking, oldStatus, newStatus) {
 }
 
 function handlePaymentStatusChange(booking) {
-    const title = '💰 Payment Confirmed!';
-    const body = 'Your payment for booking ' + booking.booking_reference + ' has been confirmed.';
+    var title = '💰 Payment Confirmed!';
+    var body = 'Your payment for booking ' + booking.booking_reference + ' has been confirmed.';
 
     if ('Notification' in window && Notification.permission === 'granted') {
         new Notification(title, {
@@ -469,7 +488,7 @@ function handlePaymentStatusChange(booking) {
 
 function playNotificationSound() {
     try {
-        const audio = document.getElementById('notificationSound');
+        var audio = document.getElementById('notificationSound');
         if (audio) {
             audio.currentTime = 0;
             audio.play().catch(function() {});
