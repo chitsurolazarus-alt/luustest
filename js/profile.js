@@ -2,11 +2,11 @@
    LUU TRAVELS & LOGISTICS - PROFILE MANAGER
    ===================================================================== */
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const user = await AuthManager.requireAuth('login.html');
+document.addEventListener('DOMContentLoaded', async function() {
+    var user = await AuthManager.requireAuth('login.html');
     if (!user) return;
 
-    const profile = await AuthManager.getProfile(user.id);
+    var profile = await AuthManager.getProfile(user.id);
     renderProfile(profile, user);
     await loadBookingCount(user.id);
     setupMobileMenu();
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    LOGOUT - SIMPLE AND RELIABLE
    ===================================================================== */
 function setupLogout() {
-    const logoutBtn = document.getElementById('logoutBtn');
+    var logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.onclick = function(e) {
             e.preventDefault();
@@ -25,7 +25,7 @@ function setupLogout() {
         };
     }
 
-    const mobileLogout = document.getElementById('mobileLogout');
+    var mobileLogout = document.getElementById('mobileLogout');
     if (mobileLogout) {
         mobileLogout.onclick = function(e) {
             e.preventDefault();
@@ -36,15 +36,18 @@ function setupLogout() {
 
 async function doLogout() {
     try {
-        const logoutBtn = document.getElementById('logoutBtn');
-        const mobileLogout = document.getElementById('mobileLogout');
+        var logoutBtn = document.getElementById('logoutBtn');
+        var mobileLogout = document.getElementById('mobileLogout');
         if (logoutBtn) logoutBtn.textContent = 'Logging out...';
         if (mobileLogout) mobileLogout.textContent = '⏳ Logging out...';
         
-        const { error } = await supabaseClient.auth.signOut();
+        var { error } = await supabaseClient.auth.signOut();
         if (error) throw error;
         
-        try { localStorage.clear(); } catch(e) {}
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+        } catch(e) {}
         
         showToast('Logged out successfully!', 'success');
         
@@ -56,8 +59,8 @@ async function doLogout() {
         console.error('Logout error:', err);
         showToast('Error logging out. Please try again.', 'error');
         
-        const logoutBtn = document.getElementById('logoutBtn');
-        const mobileLogout = document.getElementById('mobileLogout');
+        var logoutBtn = document.getElementById('logoutBtn');
+        var mobileLogout = document.getElementById('mobileLogout');
         if (logoutBtn) logoutBtn.textContent = 'Logout';
         if (mobileLogout) mobileLogout.textContent = '🚪 Logout';
     }
@@ -67,8 +70,8 @@ async function doLogout() {
    MOBILE MENU
    ===================================================================== */
 function setupMobileMenu() {
-    const hamburger = document.getElementById('hamburgerBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var mobileMenu = document.getElementById('mobileMenu');
 
     if (hamburger && mobileMenu) {
         hamburger.onclick = function() {
@@ -76,17 +79,18 @@ function setupMobileMenu() {
             mobileMenu.classList.toggle('open');
         };
 
-        mobileMenu.querySelectorAll('a').forEach(function(link) {
-            link.onclick = function() {
+        var links = mobileMenu.querySelectorAll('a');
+        for (var i = 0; i < links.length; i++) {
+            links[i].onclick = function() {
                 hamburger.classList.remove('active');
                 mobileMenu.classList.remove('open');
             };
-        });
+        }
     }
 }
 
 function renderProfile(profile, user) {
-    const initial = profile.full_name.charAt(0).toUpperCase();
+    var initial = profile.full_name.charAt(0).toUpperCase();
     document.getElementById('profileAvatar').textContent = initial;
     document.getElementById('profileName').textContent = profile.full_name;
     document.getElementById('profileEmail').textContent = user.email;
@@ -99,7 +103,7 @@ function renderProfile(profile, user) {
 }
 
 async function loadBookingCount(userId) {
-    const { count, error } = await supabaseClient
+    var { count, error } = await supabaseClient
         .from('bookings')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId);
