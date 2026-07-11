@@ -2,7 +2,7 @@
    LUU TRAVELS & LOGISTICS - BOOKING MANAGER
    ===================================================================== */
 
-const BookingState = {
+var BookingState = {
     currentUser: null,
     routeFilter: 'all',
     seats: 1,
@@ -15,10 +15,10 @@ const BookingState = {
     dropoffCoords: null
 };
 
-const WHATSAPP_NUMBER = '27768457061';
+var WHATSAPP_NUMBER = '27768457061';
 
-document.addEventListener('DOMContentLoaded', async () => {
-    const user = await AuthManager.requireAuth('login.html');
+document.addEventListener('DOMContentLoaded', async function() {
+    var user = await AuthManager.requireAuth('login.html');
     if (!user) return;
     BookingState.currentUser = user;
 
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', async () => {
    LOGOUT - SIMPLE AND RELIABLE
    ===================================================================== */
 function setupLogout() {
-    const logoutBtn = document.getElementById('logoutBtn');
+    var logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
         logoutBtn.onclick = function(e) {
             e.preventDefault();
@@ -42,7 +42,7 @@ function setupLogout() {
         };
     }
 
-    const mobileLogout = document.getElementById('mobileLogout');
+    var mobileLogout = document.getElementById('mobileLogout');
     if (mobileLogout) {
         mobileLogout.onclick = function(e) {
             e.preventDefault();
@@ -53,15 +53,18 @@ function setupLogout() {
 
 async function doLogout() {
     try {
-        const logoutBtn = document.getElementById('logoutBtn');
-        const mobileLogout = document.getElementById('mobileLogout');
+        var logoutBtn = document.getElementById('logoutBtn');
+        var mobileLogout = document.getElementById('mobileLogout');
         if (logoutBtn) logoutBtn.textContent = 'Logging out...';
         if (mobileLogout) mobileLogout.textContent = '⏳ Logging out...';
         
-        const { error } = await supabaseClient.auth.signOut();
+        var { error } = await supabaseClient.auth.signOut();
         if (error) throw error;
         
-        try { localStorage.clear(); } catch(e) {}
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+        } catch(e) {}
         
         showToast('Logged out successfully!', 'success');
         
@@ -73,8 +76,8 @@ async function doLogout() {
         console.error('Logout error:', err);
         showToast('Error logging out. Please try again.', 'error');
         
-        const logoutBtn = document.getElementById('logoutBtn');
-        const mobileLogout = document.getElementById('mobileLogout');
+        var logoutBtn = document.getElementById('logoutBtn');
+        var mobileLogout = document.getElementById('mobileLogout');
         if (logoutBtn) logoutBtn.textContent = 'Logout';
         if (mobileLogout) mobileLogout.textContent = '🚪 Logout';
     }
@@ -84,8 +87,8 @@ async function doLogout() {
    MOBILE MENU
    ===================================================================== */
 function setupMobileMenu() {
-    const hamburger = document.getElementById('hamburgerBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
+    var hamburger = document.getElementById('hamburgerBtn');
+    var mobileMenu = document.getElementById('mobileMenu');
 
     if (hamburger && mobileMenu) {
         hamburger.onclick = function() {
@@ -93,31 +96,35 @@ function setupMobileMenu() {
             mobileMenu.classList.toggle('open');
         };
 
-        mobileMenu.querySelectorAll('a').forEach(function(link) {
-            link.onclick = function() {
+        var links = mobileMenu.querySelectorAll('a');
+        for (var i = 0; i < links.length; i++) {
+            links[i].onclick = function() {
                 hamburger.classList.remove('active');
                 mobileMenu.classList.remove('open');
             };
-        });
+        }
     }
 }
 
 // Map click handler
-let clickStage = 'pickup';
+var clickStage = 'pickup';
+
 function setupMapClicks() {
     MapManager.map.on('click', async function(e) {
-        const { lat, lng } = e.latlng;
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+        
         if (clickStage === 'pickup') {
             MapManager.setPickup(lat, lng);
             clickStage = 'dropoff';
-            const address = await reverseGeocode(lat, lng);
+            var address = await reverseGeocode(lat, lng);
             document.getElementById('pickupSearch').value = address || lat.toFixed(5) + ', ' + lng.toFixed(5);
             BookingState.pickupAddress = address || lat.toFixed(5) + ', ' + lng.toFixed(5);
             BookingState.pickupCoords = { lat: lat, lng: lng };
         } else if (clickStage === 'dropoff') {
             MapManager.setDropoff(lat, lng);
             clickStage = 'done';
-            const address = await reverseGeocode(lat, lng);
+            var address = await reverseGeocode(lat, lng);
             document.getElementById('dropoffSearch').value = address || lat.toFixed(5) + ', ' + lng.toFixed(5);
             BookingState.dropoffAddress = address || lat.toFixed(5) + ', ' + lng.toFixed(5);
             BookingState.dropoffCoords = { lat: lat, lng: lng };
@@ -159,9 +166,9 @@ function setupMapClicks() {
 
 async function reverseGeocode(lat, lng) {
     try {
-        const url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1';
-        const response = await fetch(url);
-        const data = await response.json();
+        var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1';
+        var response = await fetch(url);
+        var data = await response.json();
         return data.display_name || null;
     } catch (e) {
         return null;
@@ -169,16 +176,18 @@ async function reverseGeocode(lat, lng) {
 }
 
 async function handleAddressSearch(which) {
-    const inputId = which === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
-    const btnId = which === 'pickup' ? 'pickupSearchBtn' : 'dropoffSearchBtn';
-    const query = document.getElementById(inputId).value.trim();
+    var inputId = which === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
+    var btnId = which === 'pickup' ? 'pickupSearchBtn' : 'dropoffSearchBtn';
+    var query = document.getElementById(inputId).value.trim();
     if (!query) { showToast('Please type an address first.', 'error'); return; }
 
-    const btn = document.getElementById(btnId);
+    var btn = document.getElementById(btnId);
     btn.disabled = true;
     btn.textContent = '...';
     try {
-        const { lat, lng } = await MapManager.geocodeAddress(query + ', South Africa');
+        var result = await MapManager.geocodeAddress(query + ', South Africa');
+        var lat = result.lat;
+        var lng = result.lng;
         if (which === 'pickup') {
             MapManager.setPickup(lat, lng);
             clickStage = 'dropoff';
@@ -202,7 +211,7 @@ async function handleAddressSearch(which) {
 function calculatePrice() {
     if (!BookingState.pickupCoords || !BookingState.dropoffCoords) return;
     
-    const distance = calculateDistanceKm(
+    var distance = calculateDistanceKm(
         BookingState.pickupCoords.lat,
         BookingState.pickupCoords.lng,
         BookingState.dropoffCoords.lat,
@@ -210,7 +219,7 @@ function calculatePrice() {
     );
     
     BookingState.distance = distance;
-    const price = distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    var price = distance * APP_CONFIG.pricePerKm * BookingState.seats;
     
     document.getElementById('distanceValue').textContent = distance.toFixed(1) + ' km';
     document.getElementById('estimatedPriceValue').textContent = formatCurrency(price);
@@ -219,7 +228,7 @@ function calculatePrice() {
 }
 
 async function loadTimeSlots() {
-    const { data, error } = await supabaseClient
+    var { data, error } = await supabaseClient
         .from('time_slots')
         .select('*')
         .eq('is_active', true)
@@ -233,7 +242,7 @@ async function loadTimeSlots() {
 
     if (!data || data.length === 0) {
         await createDefaultTimeSlots();
-        const { data: newData } = await supabaseClient
+        var { data: newData } = await supabaseClient
             .from('time_slots')
             .select('*')
             .eq('is_active', true)
@@ -246,7 +255,7 @@ async function loadTimeSlots() {
 }
 
 async function createDefaultTimeSlots() {
-    const defaultSlots = [
+    var defaultSlots = [
         { route: 'Gauteng-Limpopo', departure_time: '06:00', is_active: true },
         { route: 'Gauteng-Limpopo', departure_time: '10:00', is_active: true },
         { route: 'Gauteng-Limpopo', departure_time: '14:00', is_active: true },
@@ -257,61 +266,81 @@ async function createDefaultTimeSlots() {
         { route: 'Limpopo-Gauteng', departure_time: '18:00', is_active: true }
     ];
     
-    for (const slot of defaultSlots) {
-        await supabaseClient.from('time_slots').insert([slot]);
+    for (var i = 0; i < defaultSlots.length; i++) {
+        await supabaseClient.from('time_slots').insert([defaultSlots[i]]);
     }
 }
 
 function renderTimeSlots(slots) {
-    const container = document.getElementById('timeSlotContainer');
-    const route = BookingState.routeFilter;
+    var container = document.getElementById('timeSlotContainer');
+    var route = BookingState.routeFilter;
 
-    const filtered = route === 'all' 
-        ? slots 
-        : slots.filter(function(s) { return s.route === route; });
+    var filtered = [];
+    if (route === 'all') {
+        filtered = slots;
+    } else {
+        for (var i = 0; i < slots.length; i++) {
+            if (slots[i].route === route) {
+                filtered.push(slots[i]);
+            }
+        }
+    }
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="trip-empty">No time slots available for this route.</div>';
         return;
     }
 
-    const grouped = {};
-    filtered.forEach(function(slot) {
+    var grouped = {};
+    for (var j = 0; j < filtered.length; j++) {
+        var slot = filtered[j];
         if (!grouped[slot.route]) grouped[slot.route] = [];
         grouped[slot.route].push(slot);
-    });
+    }
 
-    let html = '';
-    for (const [route, times] of Object.entries(grouped)) {
+    var html = '';
+    var routeKeys = Object.keys(grouped);
+    for (var k = 0; k < routeKeys.length; k++) {
+        var routeKey = routeKeys[k];
+        var times = grouped[routeKey];
         html += '<div style="margin-bottom:16px;">';
-        html += '<h4 style="font-size:0.9rem; color:var(--primary); margin-bottom:8px;">' + route.replace('-', ' → ') + '</h4>';
+        html += '<h4 style="font-size:0.9rem; color:var(--primary); margin-bottom:8px;">' + routeKey.replace('-', ' → ') + '</h4>';
         html += '<div style="display:flex; flex-wrap:wrap; gap:8px;">';
-        html += times.map(function(slot) {
-            const isActive = BookingState.selectedTime === slot.id ? 'active' : '';
-            const bgColor = BookingState.selectedTime === slot.id ? 'var(--primary)' : 'var(--secondary)';
-            const textColor = BookingState.selectedTime === slot.id ? 'var(--secondary)' : 'var(--gray-600)';
-            return '<button class="time-slot-chip ' + isActive + '" data-slot-id="' + slot.id + '" data-route="' + slot.route + '" data-time="' + slot.departure_time + '" style="padding:8px 16px; border-radius:999px; border:1.5px solid var(--gray-200); background:' + bgColor + '; color:' + textColor + '; cursor:pointer; font-weight:600; font-size:0.85rem;">' + slot.departure_time + '</button>';
-        }).join('');
+        for (var t = 0; t < times.length; t++) {
+            var slotItem = times[t];
+            var isActive = BookingState.selectedTime === slotItem.id ? 'active' : '';
+            var bgColor = BookingState.selectedTime === slotItem.id ? 'var(--primary)' : 'var(--secondary)';
+            var textColor = BookingState.selectedTime === slotItem.id ? 'var(--secondary)' : 'var(--gray-600)';
+            html += '<button class="time-slot-chip ' + isActive + '" data-slot-id="' + slotItem.id + '" data-route="' + slotItem.route + '" data-time="' + slotItem.departure_time + '" style="padding:8px 16px; border-radius:999px; border:1.5px solid var(--gray-200); background:' + bgColor + '; color:' + textColor + '; cursor:pointer; font-weight:600; font-size:0.85rem;">' + slotItem.departure_time + '</button>';
+        }
         html += '</div></div>';
     }
 
     container.innerHTML = html;
 
-    container.querySelectorAll('.time-slot-chip').forEach(function(btn) {
-        btn.onclick = function() {
-            document.querySelectorAll('.time-slot-chip').forEach(function(b) { b.classList.remove('active'); });
+    var chips = container.querySelectorAll('.time-slot-chip');
+    for (var c = 0; c < chips.length; c++) {
+        chips[c].onclick = function() {
+            var allChips = document.querySelectorAll('.time-slot-chip');
+            for (var a = 0; a < allChips.length; a++) {
+                allChips[a].classList.remove('active');
+            }
             this.classList.add('active');
             BookingState.selectedTime = this.dataset.slotId;
             document.getElementById('selectedTimeDisplay').textContent = this.dataset.time;
             document.getElementById('selectedTimeDisplay').style.color = 'var(--success)';
         };
-    });
+    }
 }
 
 function setupUIHandlers() {
-    document.querySelectorAll('.route-chip').forEach(function(chip) {
-        chip.onclick = async function() {
-            document.querySelectorAll('.route-chip').forEach(function(c) { c.classList.remove('active'); });
+    var chips = document.querySelectorAll('.route-chip');
+    for (var i = 0; i < chips.length; i++) {
+        chips[i].onclick = async function() {
+            var allChips = document.querySelectorAll('.route-chip');
+            for (var c = 0; c < allChips.length; c++) {
+                allChips[c].classList.remove('active');
+            }
             this.classList.add('active');
             BookingState.routeFilter = this.dataset.route;
             BookingState.selectedTime = null;
@@ -319,10 +348,10 @@ function setupUIHandlers() {
             document.getElementById('selectedTimeDisplay').style.color = 'var(--gray-400)';
             await loadTimeSlots();
         };
-    });
+    }
 
-    const dateInput = document.getElementById('tripDate');
-    const today = new Date().toISOString().split('T')[0];
+    var dateInput = document.getElementById('tripDate');
+    var today = new Date().toISOString().split('T')[0];
     dateInput.setAttribute('min', today);
     dateInput.value = today;
 
@@ -334,6 +363,7 @@ function setupUIHandlers() {
             calculatePrice();
         }
     };
+    
     document.getElementById('seatPlus').onclick = function() {
         if (BookingState.seats < 14) { 
             BookingState.seats++; 
@@ -362,32 +392,32 @@ async function confirmBookingViaWhatsApp() {
         return;
     }
 
-    const user = BookingState.currentUser;
-    const { data: profile } = await supabaseClient
+    var user = BookingState.currentUser;
+    var { data: profile } = await supabaseClient
         .from('users')
         .select('full_name, phone')
         .eq('id', user.id)
         .single();
 
-    const { data: slotData } = await supabaseClient
+    var { data: slotData } = await supabaseClient
         .from('time_slots')
         .select('route, departure_time')
         .eq('id', BookingState.selectedTime)
         .single();
 
-    const date = document.getElementById('tripDate').value;
-    const formattedDate = new Date(date).toLocaleDateString('en-ZA', { 
+    var date = document.getElementById('tripDate').value;
+    var formattedDate = new Date(date).toLocaleDateString('en-ZA', { 
         weekday: 'long', 
         year: 'numeric', 
         month: 'long', 
         day: 'numeric' 
     });
 
-    const totalPrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
-    const bookingRef = 'LUU-' + Date.now().toString().slice(-8);
+    var totalPrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    var bookingRef = 'LUU-' + Date.now().toString().slice(-8);
 
     try {
-        const { data: bookingData, error } = await supabaseClient.from('bookings').insert([{
+        var { data: bookingData, error } = await supabaseClient.from('bookings').insert([{
             user_id: user.id,
             trip_id: null,
             number_of_seats: BookingState.seats,
@@ -405,24 +435,24 @@ async function confirmBookingViaWhatsApp() {
 
         if (error) throw error;
 
-        const message = '🚐 *NEW BOOKING - Luu Travels & Logistics*\n\n' +
-            '📋 *Reference:* ' + bookingRef + '\n' +
-            '👤 *Customer:* ' + (profile?.full_name || 'Unknown') + '\n' +
-            '📱 *Phone:* ' + (profile?.phone || 'Not provided') + '\n' +
-            '📧 *Email:* ' + user.email + '\n\n' +
-            '📍 *Route:* ' + (slotData?.route?.replace('-', ' → ') || 'Unknown') + '\n' +
-            '📅 *Date:* ' + formattedDate + '\n' +
-            '🕐 *Time:* ' + (slotData?.departure_time || 'Unknown') + '\n\n' +
-            '📍 *Pickup:* ' + BookingState.pickupAddress + '\n' +
-            '📍 *Drop-off:* ' + BookingState.dropoffAddress + '\n\n' +
-            '📏 *Distance:* ' + BookingState.distance.toFixed(1) + ' km\n' +
-            '👥 *Passengers:* ' + BookingState.seats + '\n' +
-            '💰 *Total Price:* R' + totalPrice.toFixed(2) + '\n\n' +
-            '📝 *Special Requests:* ' + (document.getElementById('specialRequests').value.trim() || 'None') + '\n\n' +
-            '---\n*Please confirm this booking and arrange transport.*';
+        var message = '🚐 *NEW BOOKING - Luu Travels & Logistics*\n\n';
+        message += '📋 *Reference:* ' + bookingRef + '\n';
+        message += '👤 *Customer:* ' + (profile?.full_name || 'Unknown') + '\n';
+        message += '📱 *Phone:* ' + (profile?.phone || 'Not provided') + '\n';
+        message += '📧 *Email:* ' + user.email + '\n\n';
+        message += '📍 *Route:* ' + (slotData?.route?.replace('-', ' → ') || 'Unknown') + '\n';
+        message += '📅 *Date:* ' + formattedDate + '\n';
+        message += '🕐 *Time:* ' + (slotData?.departure_time || 'Unknown') + '\n\n';
+        message += '📍 *Pickup:* ' + BookingState.pickupAddress + '\n';
+        message += '📍 *Drop-off:* ' + BookingState.dropoffAddress + '\n\n';
+        message += '📏 *Distance:* ' + BookingState.distance.toFixed(1) + ' km\n';
+        message += '👥 *Passengers:* ' + BookingState.seats + '\n';
+        message += '💰 *Total Price:* R' + totalPrice.toFixed(2) + '\n\n';
+        message += '📝 *Special Requests:* ' + (document.getElementById('specialRequests').value.trim() || 'None') + '\n\n';
+        message += '---\n*Please confirm this booking and arrange transport.*';
 
-        const encodedMessage = encodeURIComponent(message);
-        const whatsappUrl = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodedMessage;
+        var encodedMessage = encodeURIComponent(message);
+        var whatsappUrl = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodedMessage;
 
         showToast('Booking saved! Opening WhatsApp...', 'success');
         
