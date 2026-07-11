@@ -10,42 +10,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProfile(profile, user);
     await loadBookingCount(user.id);
     setupMobileMenu();
-    setupLogoutHandlers();
+    setupLogout();
 });
 
 /* =====================================================================
-   LOGOUT HANDLERS
+   LOGOUT - SIMPLE AND RELIABLE
    ===================================================================== */
-function setupLogoutHandlers() {
+function setupLogout() {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', async function(e) {
+        logoutBtn.onclick = function(e) {
             e.preventDefault();
-            await performLogout();
-        });
+            doLogout();
+        };
     }
 
     const mobileLogout = document.getElementById('mobileLogout');
     if (mobileLogout) {
-        mobileLogout.addEventListener('click', async function(e) {
+        mobileLogout.onclick = function(e) {
             e.preventDefault();
-            await performLogout();
-        });
+            doLogout();
+        };
     }
 }
 
-async function performLogout() {
+async function doLogout() {
     try {
+        const logoutBtn = document.getElementById('logoutBtn');
+        const mobileLogout = document.getElementById('mobileLogout');
+        if (logoutBtn) logoutBtn.textContent = 'Logging out...';
+        if (mobileLogout) mobileLogout.textContent = '⏳ Logging out...';
+        
         const { error } = await supabaseClient.auth.signOut();
         if (error) throw error;
-        localStorage.removeItem('sb-gwzpzvwermsfnputttdo-auth-token');
-        showToast('Logged out successfully.', 'success');
-        setTimeout(() => {
+        
+        try { localStorage.clear(); } catch(e) {}
+        
+        showToast('Logged out successfully!', 'success');
+        
+        setTimeout(function() {
             window.location.href = 'login.html';
         }, 500);
+        
     } catch (err) {
         console.error('Logout error:', err);
         showToast('Error logging out. Please try again.', 'error');
+        
+        const logoutBtn = document.getElementById('logoutBtn');
+        const mobileLogout = document.getElementById('mobileLogout');
+        if (logoutBtn) logoutBtn.textContent = 'Logout';
+        if (mobileLogout) mobileLogout.textContent = '🚪 Logout';
     }
 }
 
@@ -57,16 +71,16 @@ function setupMobileMenu() {
     const mobileMenu = document.getElementById('mobileMenu');
 
     if (hamburger && mobileMenu) {
-        hamburger.addEventListener('click', function() {
+        hamburger.onclick = function() {
             this.classList.toggle('active');
             mobileMenu.classList.toggle('open');
-        });
+        };
 
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', function() {
+        mobileMenu.querySelectorAll('a').forEach(function(link) {
+            link.onclick = function() {
                 hamburger.classList.remove('active');
                 mobileMenu.classList.remove('open');
-            });
+            };
         });
     }
 }
