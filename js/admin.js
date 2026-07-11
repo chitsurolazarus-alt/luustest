@@ -132,10 +132,14 @@ async function loadReviews() {
 function renderDashboardStats() {
     const pending = AdminState.bookings.filter(b => b.booking_status === 'pending').length;
     const confirmed = AdminState.bookings.filter(b => b.booking_status === 'confirmed').length;
+    const completed = AdminState.bookings.filter(b => b.booking_status === 'completed').length;
+    const paid = AdminState.bookings.filter(b => b.payment_status === 'paid').length;
     
     document.getElementById('statBookings').textContent = AdminState.bookings.length;
     document.getElementById('statPending').textContent = pending;
     document.getElementById('statConfirmed').textContent = confirmed;
+    document.getElementById('statCompleted').textContent = completed;
+    document.getElementById('statPaid').textContent = paid;
     document.getElementById('statDrivers').textContent = AdminState.drivers.length;
 }
 
@@ -149,8 +153,9 @@ function renderRecentTables() {
             <td>${b.number_of_seats}</td>
             <td>${formatCurrency(b.total_price)}</td>
             <td><span class="badge badge-${b.booking_status}">${b.booking_status}</span></td>
+            <td><span class="badge ${b.payment_status === 'paid' ? 'badge-confirmed' : 'badge-pending'}">${b.payment_status}</span></td>
         </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center; color:var(--gray-600);">No bookings yet.</td></tr>';
+    `).join('') || '<tr><td colspan="7" style="text-align:center; color:var(--gray-600);">No bookings yet.</td></tr>';
 
     const recentTrips = AdminState.trips.slice(0, 5);
     document.querySelector('#recentTripsTable tbody').innerHTML = recentTrips.map(t => `
@@ -194,6 +199,8 @@ function renderBookings() {
             <td class="table-actions" style="display:flex; flex-direction:column; gap:4px; align-items:flex-start;">
                 ${b.booking_status === 'pending' ? `<button class="btn btn-success btn-sm" data-confirm="${b.id}" style="width:100%;">✅ Confirm</button>` : ''}
                 ${b.booking_status === 'confirmed' ? `<button class="btn btn-navy btn-sm" data-complete="${b.id}" style="width:100%;">🎉 Complete</button>` : ''}
+                ${b.booking_status === 'completed' && b.payment_status === 'pending' ? `<button class="btn btn-success btn-sm" data-mark-paid="${b.id}" style="width:100%;">💰 Mark Paid</button>` : ''}
+                ${b.payment_status === 'paid' ? `<span class="badge badge-confirmed" style="width:100%;text-align:center;">✅ Paid</span>` : ''}
                 <button class="btn btn-danger btn-sm" data-delete-booking="${b.id}" style="width:100%;">🗑 Delete</button>
             </td>
         </tr>
@@ -205,6 +212,7 @@ function renderBookings() {
     document.querySelectorAll('[data-delete-booking]').forEach(btn => btn.addEventListener('click', () => deleteBooking(btn.dataset.deleteBooking)));
     document.querySelectorAll('[data-confirm]').forEach(btn => btn.addEventListener('click', () => confirmBooking(btn.dataset.confirm)));
     document.querySelectorAll('[data-complete]').forEach(btn => btn.addEventListener('click', () => completeBooking(btn.dataset.complete)));
+    document.querySelectorAll('[data-mark-paid]').forEach(btn => btn.addEventListener('click', () => markBookingPaid(btn.dataset.markPaid)));
 }
 
 async function confirmBooking(bookingId) {
@@ -230,7 +238,7 @@ async function confirmBooking(bookingId) {
 }
 
 async function completeBooking(bookingId) {
-    if (!confirm('Mark this booking as completed?')) return;
+    if (!confirm('Mark this booking as completed? This will also mark it as paid.')) return;
     
     const { error } = await supabaseClient
         .from('bookings')
@@ -245,16 +253,43 @@ async function completeBooking(bookingId) {
         return; 
     }
     
-    showToast('🎉 Booking completed! Customer can now leave a review.', 'success');
+    showToast('🎉 Booking completed and marked as paid! Customer can now leave a review.', 'success');
+    await loadBookings();
+    renderDashboardStats();
+    renderRecentTables();
+}
+
+async function markBookingPaid(bookingId) {
+    if (!confirm('Mark this booking as paid?')) return;
+    
+    const { error } = await supabaseClient
+        .from('bookings')
+        .update({ 
+            payment_status: 'paid'
+        })
+        .eq('id', bookingId);
+        
+    if (error) { 
+        showToast('Error marking as paid: ' + error.message, 'error'); 
+        return; 
+    }
+    
+    showToast('💰 Booking marked as paid.', 'success');
     await loadBookings();
     renderDashboardStats();
     renderRecentTables();
 }
 
 async function updateBookingStatus(id, status) {
-    const { error } = await supabaseClient.from('bookings').update({ booking_status: status }).eq('id', id);
+    // If status is completed, also mark as paid
+    const updateData = { booking_status: status };
+    if (status === 'completed') {
+        updateData.payment_status = 'paid';
+    }
+    
+    const { error } = await supabaseClient.from('bookings').update(updateData).eq('id', id);
     if (error) { showToast(error.message, 'error'); return; }
-    showToast(`Booking ${status}.`, 'success');
+    showToast(`Booking ${status}.${status === 'completed' ? ' Marked as paid.' : ''}`, 'success');
     await loadBookings();
     renderDashboardStats();
     renderRecentTables();
@@ -354,8 +389,11 @@ async function updateTripStatus(tripId, status) {
     const { error } = await supabaseClient.from('trips').update({ status }).eq('id', tripId);
     if (error) { showToast(error.message, 'error'); return; }
     if (status === 'completed') {
-        // Auto-complete related bookings
-        await supabaseClient.from('bookings').update({ booking_status: 'completed' }).eq('trip_id', tripId).neq('booking_status', 'cancelled');
+        // Auto-complete related bookings and mark as paid
+        await supabaseClient.from('bookings').update({ 
+            booking_status: 'completed',
+            payment_status: 'paid'
+        }).eq('trip_id', tripId).neq('booking_status', 'cancelled');
     }
     showToast('Trip status updated.', 'success');
     await loadTrips();
@@ -474,7 +512,6 @@ async function deleteSlot(id) {
 
 /* ------------------------------- FORMS --------------------------------- */
 function setupForms() {
-    // Auto-calculate trip price when distance changes
     document.getElementById('tripDistance').addEventListener('input', (e) => {
         const distance = parseFloat(e.target.value) || 0;
         document.getElementById('tripPrice').value = (distance * APP_CONFIG.pricePerKm).toFixed(2);
