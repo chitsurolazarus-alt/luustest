@@ -2,17 +2,20 @@
    LUU TRAVELS & LOGISTICS - LANDING PAGE FUNCTIONALITY
    ===================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function() {
     // Mobile menu toggle
-    const hamburgerBtn = document.getElementById('hamburgerBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
+    var hamburgerBtn = document.getElementById('hamburgerBtn');
+    var mobileMenu = document.getElementById('mobileMenu');
     if (hamburgerBtn && mobileMenu) {
-        hamburgerBtn.addEventListener('click', () => {
+        hamburgerBtn.addEventListener('click', function() {
             mobileMenu.classList.toggle('open');
         });
-        mobileMenu.querySelectorAll('a, .btn').forEach(el => {
-            el.addEventListener('click', () => mobileMenu.classList.remove('open'));
-        });
+        var links = mobileMenu.querySelectorAll('a, .btn');
+        for (var i = 0; i < links.length; i++) {
+            links[i].addEventListener('click', function() {
+                mobileMenu.classList.remove('open');
+            });
+        }
     }
 
     loadActiveAds();
@@ -21,10 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Replace the static testimonials with real, admin-approved customer reviews.
-// If there aren't any yet, the static markup already in the HTML stays as-is.
 async function loadApprovedReviews() {
     try {
-        const { data, error } = await supabaseClient
+        var { data, error } = await supabaseClient
             .from('reviews')
             .select('*, users(full_name)')
             .eq('is_approved', true)
@@ -33,18 +35,23 @@ async function loadApprovedReviews() {
 
         if (error || !data || data.length === 0) return;
 
-        const grid = document.querySelector('.testimonial-grid');
-        grid.innerHTML = data.map(r => {
-            const name = r.users ? r.users.full_name : 'Luu Travels Customer';
-            const initial = name.charAt(0).toUpperCase();
-            return `
-                <div class="testimonial-card">
-                    <div class="stars">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</div>
-                    <p>"${r.comment ? r.comment.replace(/</g, '&lt;') : 'Great experience with Luu Travels & Logistics.'}"</p>
-                    <div class="testimonial-author"><div class="avatar">${initial}</div> ${name}</div>
-                </div>
-            `;
-        }).join('');
+        var grid = document.querySelector('.testimonial-grid');
+        var html = '';
+        
+        for (var i = 0; i < data.length; i++) {
+            var r = data[i];
+            var name = r.reviewer_name || (r.users ? r.users.full_name : 'Luu Travels Customer');
+            var initial = name.charAt(0).toUpperCase();
+            var commentText = r.comment ? r.comment.replace(/</g, '&lt;') : 'Great experience with Luu Travels & Logistics.';
+            
+            html += '<div class="testimonial-card">';
+            html += '<div class="stars">' + '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating) + '</div>';
+            html += '<p>"' + commentText + '"</p>';
+            html += '<div class="testimonial-author"><div class="avatar">' + initial + '</div> ' + name + '</div>';
+            html += '</div>';
+        }
+        
+        grid.innerHTML = html;
     } catch (err) {
         console.error('Could not load reviews:', err);
     }
@@ -53,7 +60,7 @@ async function loadApprovedReviews() {
 // Show active ads (admins can post these anywhere; landing page shows them near the top)
 async function loadActiveAds() {
     try {
-        const { data, error } = await supabaseClient
+        var { data, error } = await supabaseClient
             .from('ads')
             .select('*')
             .eq('is_active', true)
@@ -61,17 +68,21 @@ async function loadActiveAds() {
 
         if (error || !data || data.length === 0) return;
 
-        const section = document.getElementById('ads-section');
-        const banner = document.getElementById('adsBanner');
-        banner.innerHTML = data.map(ad => `
-            <div class="ad-card">
-                ${ad.image_url ? `<img src="${ad.image_url}" alt="${ad.title}">` : ''}
-                <div>
-                    <h4>${ad.title}</h4>
-                    <p>${ad.content}</p>
-                </div>
-            </div>
-        `).join('');
+        var section = document.getElementById('ads-section');
+        var banner = document.getElementById('adsBanner');
+        var html = '';
+        
+        for (var i = 0; i < data.length; i++) {
+            var ad = data[i];
+            html += '<div class="ad-card">';
+            if (ad.image_url) {
+                html += '<img src="' + ad.image_url + '" alt="' + ad.title + '">';
+            }
+            html += '<div><h4>' + ad.title + '</h4><p>' + ad.content + '</p></div>';
+            html += '</div>';
+        }
+        
+        banner.innerHTML = html;
         section.style.display = 'block';
     } catch (err) {
         console.error('Could not load ads:', err);
@@ -82,12 +93,18 @@ async function loadActiveAds() {
 // but if they click Login/Register while already authenticated, send them straight in.
 async function redirectIfLoggedIn() {
     try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        var { data: { session } } = await supabaseClient.auth.getSession();
         if (!session) return;
-        const loginBtns = document.querySelectorAll('a[href="pages/login.html"]');
-        const registerBtns = document.querySelectorAll('a[href="pages/register.html"]');
-        loginBtns.forEach(btn => { btn.href = 'pages/dashboard.html'; btn.textContent = 'Dashboard'; });
-        registerBtns.forEach(btn => { btn.href = 'pages/booking.html'; btn.textContent = 'Book a Trip'; });
+        var loginBtns = document.querySelectorAll('a[href="pages/login.html"]');
+        var registerBtns = document.querySelectorAll('a[href="pages/register.html"]');
+        for (var i = 0; i < loginBtns.length; i++) {
+            loginBtns[i].href = 'pages/dashboard.html';
+            loginBtns[i].textContent = 'Dashboard';
+        }
+        for (var j = 0; j < registerBtns.length; j++) {
+            registerBtns[j].href = 'pages/booking.html';
+            registerBtns[j].textContent = 'Book a Trip';
+        }
     } catch (err) {
         // Not logged in or session check failed - no action needed
     }
