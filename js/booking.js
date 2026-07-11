@@ -1,32 +1,4 @@
 /* =====================================================================
-   MOBILE MENU - Added to booking.js
-   ===================================================================== */
-function setupMobileMenu() {
-    const hamburger = document.getElementById('hamburgerBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-
-    if (hamburger && mobileMenu) {
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
-            mobileMenu.classList.toggle('open');
-        });
-
-        mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
-                hamburger.classList.remove('active');
-                mobileMenu.classList.remove('open');
-            });
-        });
-    }
-}
-
-// Call this in DOMContentLoaded
-document.addEventListener('DOMContentLoaded', async () => {
-    // ... existing code ...
-    setupMobileMenu();
-    // ... rest of code ...
-});
-/* =====================================================================
    LUU TRAVELS & LOGISTICS - BOOKING MANAGER
    ===================================================================== */
 
@@ -54,7 +26,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupMapClicks();
     await loadTimeSlots();
     setupUIHandlers();
+    setupMobileMenu();
+
+    // Logout handler
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+        await AuthManager.logout();
+        window.location.href = '../index.html';
+    });
+
+    document.getElementById('mobileLogout').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await AuthManager.logout();
+        window.location.href = '../index.html';
+    });
 });
+
+/* =====================================================================
+   MOBILE MENU
+   ===================================================================== */
+function setupMobileMenu() {
+    const hamburger = document.getElementById('hamburgerBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (hamburger && mobileMenu) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            mobileMenu.classList.toggle('open');
+        });
+
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                hamburger.classList.remove('active');
+                mobileMenu.classList.remove('open');
+            });
+        });
+    }
+}
 
 // Map click handler
 let clickStage = 'pickup';
@@ -64,7 +71,6 @@ function setupMapClicks() {
         if (clickStage === 'pickup') {
             MapManager.setPickup(lat, lng);
             clickStage = 'dropoff';
-            // Reverse geocode to get address
             const address = await reverseGeocode(lat, lng);
             document.getElementById('pickupSearch').value = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
             BookingState.pickupAddress = address || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
@@ -186,7 +192,6 @@ async function loadTimeSlots() {
         return;
     }
 
-    // If no time slots exist, create default ones
     if (!data || data.length === 0) {
         await createDefaultTimeSlots();
         const { data: newData } = await supabaseClient
@@ -233,7 +238,6 @@ function renderTimeSlots(slots) {
         return;
     }
 
-    // Group by route for display
     const grouped = {};
     filtered.forEach(slot => {
         if (!grouped[slot.route]) grouped[slot.route] = [];
@@ -275,7 +279,6 @@ function renderTimeSlots(slots) {
 }
 
 function setupUIHandlers() {
-    // Route filter chips
     document.querySelectorAll('.route-chip').forEach(chip => {
         chip.addEventListener('click', async () => {
             document.querySelectorAll('.route-chip').forEach(c => c.classList.remove('active'));
@@ -288,13 +291,11 @@ function setupUIHandlers() {
         });
     });
 
-    // Date picker - set default to today
     const dateInput = document.getElementById('tripDate');
     const today = new Date().toISOString().split('T')[0];
     dateInput.setAttribute('min', today);
     dateInput.value = today;
 
-    // Seat controls
     document.getElementById('seatMinus').addEventListener('click', () => {
         if (BookingState.seats > 1) { 
             BookingState.seats--; 
@@ -312,17 +313,10 @@ function setupUIHandlers() {
         }
     });
 
-    // Confirm booking - WhatsApp
     document.getElementById('confirmBookingBtn').addEventListener('click', confirmBookingViaWhatsApp);
-
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await AuthManager.logout();
-        window.location.href = '../index.html';
-    });
 }
 
 async function confirmBookingViaWhatsApp() {
-    // Validate all required fields
     if (!BookingState.selectedTime) {
         showToast('Please select a departure time.', 'error');
         return;
@@ -338,7 +332,6 @@ async function confirmBookingViaWhatsApp() {
         return;
     }
 
-    // Get user profile
     const user = BookingState.currentUser;
     const { data: profile } = await supabaseClient
         .from('users')
@@ -346,7 +339,6 @@ async function confirmBookingViaWhatsApp() {
         .eq('id', user.id)
         .single();
 
-    // Get time slot details
     const { data: slotData } = await supabaseClient
         .from('time_slots')
         .select('route, departure_time')
@@ -361,13 +353,36 @@ async function confirmBookingViaWhatsApp() {
         day: 'numeric' 
     });
 
-    // Calculate total price
     const totalPrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    const bookingRef = `LUU-${Date.now().toString().slice(-8)}`;
 
-    // Build WhatsApp message
-    const message = `
+    // Save booking to database
+    try {
+        const { data: bookingData, error } = await supabaseClient.from('bookings').insert([{
+            user_id: user.id,
+            trip_id: null,
+            number_of_seats: BookingState.seats,
+            total_price: totalPrice,
+            payment_method: 'cash',
+            payment_status: 'pending',
+            booking_status: 'pending',
+            pickup_location: BookingState.pickupAddress,
+            dropoff_location: BookingState.dropoffAddress,
+            pickup_coordinates: BookingState.pickupCoords,
+            dropoff_coordinates: BookingState.dropoffCoords,
+            special_requests: document.getElementById('specialRequests').value.trim() || null,
+            booking_reference: bookingRef
+        }]).select();
+
+        if (error) throw error;
+
+        const booking = bookingData ? bookingData[0] : null;
+
+        // Build WhatsApp message
+        const message = `
 🚐 *NEW BOOKING - Luu Travels & Logistics*
 
+📋 *Reference:* ${bookingRef}
 👤 *Customer:* ${profile?.full_name || 'Unknown'}
 📱 *Phone:* ${profile?.phone || 'Not provided'}
 📧 *Email:* ${user.email}
@@ -387,41 +402,19 @@ async function confirmBookingViaWhatsApp() {
 
 ---
 *Please confirm this booking and arrange transport.*
-    `.trim();
+        `.trim();
 
-    // Encode message for WhatsApp URL
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`;
 
-    // Save booking to database
-    try {
-        const { error } = await supabaseClient.from('bookings').insert([{
-            user_id: user.id,
-            trip_id: null, // No specific trip, just a booking request
-            number_of_seats: BookingState.seats,
-            total_price: totalPrice,
-            payment_method: 'cash',
-            payment_status: 'pending',
-            booking_status: 'pending',
-            pickup_location: BookingState.pickupAddress,
-            dropoff_location: BookingState.dropoffAddress,
-            pickup_coordinates: BookingState.pickupCoords,
-            dropoff_coordinates: BookingState.dropoffCoords,
-            special_requests: document.getElementById('specialRequests').value.trim() || null,
-            booking_reference: `LUU-${Date.now().toString().slice(-8)}`
-        }]);
-
-        if (error) throw error;
-
-        showToast('Booking saved! Redirecting to WhatsApp...', 'success');
+        showToast('Booking saved! Opening WhatsApp...', 'success');
         
-        // Redirect to WhatsApp after a short delay
+        // Open WhatsApp in new tab
+        window.open(whatsappUrl, '_blank');
+        
+        // Redirect to dashboard
         setTimeout(() => {
-            window.open(whatsappUrl, '_blank');
-            // Also open a new tab to WhatsApp
-            setTimeout(() => {
-                window.location.href = 'dashboard.html';
-            }, 500);
+            window.location.href = 'dashboard.html';
         }, 1000);
 
     } catch (err) {
