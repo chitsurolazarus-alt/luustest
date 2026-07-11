@@ -43,16 +43,18 @@
         <section class="admin-section active" id="section-dashboard">
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-icon">📋</div><div><div class="stat-value" id="statBookings">0</div><div class="stat-label">Total Bookings</div></div></div>
-                <div class="stat-card"><div class="stat-icon">⏳</div><div><div class="stat-value" id="statPending">0</div><div class="stat-label">Pending Bookings</div></div></div>
-                <div class="stat-card"><div class="stat-icon">✅</div><div><div class="stat-value" id="statConfirmed">0</div><div class="stat-label">Confirmed Bookings</div></div></div>
-                <div class="stat-card"><div class="stat-icon">🚗</div><div><div class="stat-value" id="statDrivers">0</div><div class="stat-label">Total Drivers</div></div></div>
+                <div class="stat-card"><div class="stat-icon">⏳</div><div><div class="stat-value" id="statPending">0</div><div class="stat-label">Pending</div></div></div>
+                <div class="stat-card"><div class="stat-icon">✅</div><div><div class="stat-value" id="statConfirmed">0</div><div class="stat-label">Confirmed</div></div></div>
+                <div class="stat-card"><div class="stat-icon">🎉</div><div><div class="stat-value" id="statCompleted">0</div><div class="stat-label">Completed</div></div></div>
+                <div class="stat-card"><div class="stat-icon">💰</div><div><div class="stat-value" id="statPaid">0</div><div class="stat-label">Paid</div></div></div>
+                <div class="stat-card"><div class="stat-icon">🚗</div><div><div class="stat-value" id="statDrivers">0</div><div class="stat-label">Drivers</div></div></div>
             </div>
 
             <div class="admin-card">
                 <div class="admin-card-header"><h3>Recent Bookings</h3></div>
                 <div class="table-wrapper">
                     <table class="data-table" id="recentBookingsTable">
-                        <thead><tr><th>Reference</th><th>Customer</th><th>Route</th><th>Seats</th><th>Total</th><th>Status</th></tr></thead>
+                        <thead><tr><th>Reference</th><th>Customer</th><th>Route</th><th>Seats</th><th>Total</th><th>Status</th><th>Payment</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -77,7 +79,7 @@
                     <span style="font-size:0.85rem; color:var(--gray-600);">Click Confirm to notify customer</span>
                 </div>
                 <p style="color:var(--gray-600); font-size:0.85rem; margin-bottom:14px;">
-                    Confirm pending bookings to notify customers via their dashboard.
+                    Confirm pending bookings, mark completed trips, and update payment status.
                 </p>
                 <div class="table-wrapper">
                     <table class="data-table" id="bookingsTable">
