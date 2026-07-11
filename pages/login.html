@@ -48,43 +48,25 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script>
-    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const email = document.getElementById('email').value.trim();
-        const password = document.getElementById('password').value;
-        const btn = document.getElementById('loginBtn');
+        var email = document.getElementById('email').value.trim();
+        var password = document.getElementById('password').value;
+        var btn = document.getElementById('loginBtn');
         btn.disabled = true;
         btn.textContent = 'Logging in...';
 
         try {
-            const { profile } = await AuthManager.login({ email, password });
+            var { profile } = await AuthManager.login({ email: email, password: password });
             showToast('Login successful!', 'success');
             
-            // Check if user is admin
             if (profile.role === 'admin') {
-                setTimeout(() => {
+                setTimeout(function() {
                     window.location.href = 'admin-dashboard.html';
                 }, 800);
             } else {
-                // For customers, redirect to WhatsApp with login notification
-                setTimeout(() => {
-                    const message = encodeURIComponent(
-                        `🚐 *Luu Travels & Logistics Login*\n\n` +
-                        `👤 *Customer:* ${profile.full_name}\n` +
-                        `📧 *Email:* ${email}\n` +
-                        `📱 *Phone:* ${profile.phone || 'Not provided'}\n\n` +
-                        `✅ *Logged in successfully!*\n` +
-                        `Ready to book your trip.`
-                    );
-                    const whatsappUrl = `https://wa.me/${APP_CONFIG.whatsappNumber}?text=${message}`;
-                    
-                    // Open WhatsApp in new tab
-                    window.open(whatsappUrl, '_blank');
-                    
-                    // Then redirect to booking page
-                    setTimeout(() => {
-                        window.location.href = 'booking.html';
-                    }, 500);
+                setTimeout(function() {
+                    window.location.href = 'booking.html';
                 }, 800);
             }
         } catch (err) {
