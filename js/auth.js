@@ -5,10 +5,6 @@
 
 const AuthManager = {
 
-    // Register a new customer: creates the Supabase Auth user only.
-    // The matching row in the `users` table is created automatically by a
-    // database trigger (see supabase/fix_registration.sql) so this never
-    // hits Row Level Security before the user has an active session.
     async register({ fullName, email, phone, password }) {
         const { data, error } = await supabaseClient.auth.signUp({
             email,
@@ -19,7 +15,6 @@ const AuthManager = {
         return data;
     },
 
-    // Log a user in, returns their profile (including role) so caller can redirect
     async login({ email, password }) {
         const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -29,7 +24,15 @@ const AuthManager = {
     },
 
     async logout() {
-        await supabaseClient.auth.signOut();
+        try {
+            const { error } = await supabaseClient.auth.signOut();
+            if (error) throw error;
+            localStorage.removeItem('sb-gwzpzvwermsfnputttdo-auth-token');
+            return true;
+        } catch (err) {
+            console.error('Logout error:', err);
+            throw err;
+        }
     },
 
     async getProfile(userId) {
@@ -56,7 +59,6 @@ const AuthManager = {
         return user;
     },
 
-    // Redirects to admin dashboard if not an admin
     async requireAdmin(redirectTo = 'admin-login.html') {
         const user = await this.getCurrentUser();
         if (!user) {
@@ -71,7 +73,6 @@ const AuthManager = {
         return { user, profile };
     },
 
-    // Redirects to driver login if not a driver
     async requireDriver(redirectTo = 'login.html') {
         const user = await this.getCurrentUser();
         if (!user) {
@@ -87,7 +88,7 @@ const AuthManager = {
     },
 
     async sendPasswordReset(email) {
-        const redirectUrl = `${window.location.origin}${pathPrefix()}reset-password.html`;
+        const redirectUrl = window.location.origin + pathPrefix() + 'reset-password.html';
         const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
             redirectTo: redirectUrl
         });
@@ -100,7 +101,6 @@ const AuthManager = {
     }
 };
 
-// Password strength helper used by register.html
 function passwordStrength(password) {
     let score = 0;
     if (password.length >= 6) score++;
