@@ -2,7 +2,7 @@
    LUU TRAVELS & LOGISTICS - USER DASHBOARD MANAGER
    ===================================================================== */
 
-const DashboardState = {
+var DashboardState = {
     profile: null,
     bookings: [],
     reviewedBookingIds: new Set(),
@@ -13,7 +13,7 @@ const DashboardState = {
 };
 
 document.addEventListener('DOMContentLoaded', async function() {
-    const user = await AuthManager.requireAuth('login.html');
+    var user = await AuthManager.requireAuth('login.html');
     if (!user) return;
 
     DashboardState.profile = await AuthManager.getProfile(user.id);
@@ -323,12 +323,17 @@ function setupReviewModal(userId) {
         btn.disabled = true;
         btn.textContent = 'Submitting...';
 
+        // Get the user's full name from the profile
+        var userProfile = DashboardState.profile;
+        var fullName = userProfile ? userProfile.full_name : 'Unknown';
+
         var { error } = await supabaseClient.from('reviews').insert([{
             user_id: userId,
             booking_id: bookingId,
             driver_id: driverId,
             rating: DashboardState.selectedRating,
-            comment: comment || null
+            comment: comment || null,
+            reviewer_name: fullName
         }]);
 
         if (error) {
