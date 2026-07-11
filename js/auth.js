@@ -3,29 +3,29 @@
    Requires config.js to be loaded first.
    ===================================================================== */
 
-const AuthManager = {
+var AuthManager = {
 
-    async register({ fullName, email, phone, password }) {
-        const { data, error } = await supabaseClient.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: fullName, phone } }
+    register: async function({ fullName, email, phone, password }) {
+        var { data, error } = await supabaseClient.auth.signUp({
+            email: email,
+            password: password,
+            options: { data: { full_name: fullName, phone: phone } }
         });
         if (error) throw error;
         return data;
     },
 
-    async login({ email, password }) {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    login: async function({ email, password }) {
+        var { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
         if (error) throw error;
 
-        const profile = await this.getProfile(data.user.id);
-        return { session: data.session, user: data.user, profile };
+        var profile = await this.getProfile(data.user.id);
+        return { session: data.session, user: data.user, profile: profile };
     },
 
-    async logout() {
+    logout: async function() {
         try {
-            const { error } = await supabaseClient.auth.signOut();
+            var { error } = await supabaseClient.auth.signOut();
             if (error) throw error;
             localStorage.removeItem('sb-gwzpzvwermsfnputttdo-auth-token');
             return true;
@@ -35,8 +35,8 @@ const AuthManager = {
         }
     },
 
-    async getProfile(userId) {
-        const { data, error } = await supabaseClient
+    getProfile: async function(userId) {
+        var { data, error } = await supabaseClient
             .from('users')
             .select('*')
             .eq('id', userId)
@@ -45,13 +45,14 @@ const AuthManager = {
         return data;
     },
 
-    async getCurrentUser() {
-        const { data: { user } } = await supabaseClient.auth.getUser();
+    getCurrentUser: async function() {
+        var { data: { user } } = await supabaseClient.auth.getUser();
         return user;
     },
 
-    async requireAuth(redirectTo = 'login.html') {
-        const user = await this.getCurrentUser();
+    requireAuth: async function(redirectTo) {
+        redirectTo = redirectTo || 'login.html';
+        var user = await this.getCurrentUser();
         if (!user) {
             window.location.href = redirectTo;
             return null;
@@ -59,50 +60,52 @@ const AuthManager = {
         return user;
     },
 
-    async requireAdmin(redirectTo = 'admin-login.html') {
-        const user = await this.getCurrentUser();
+    requireAdmin: async function(redirectTo) {
+        redirectTo = redirectTo || 'admin-login.html';
+        var user = await this.getCurrentUser();
         if (!user) {
             window.location.href = redirectTo;
             return null;
         }
-        const profile = await this.getProfile(user.id);
+        var profile = await this.getProfile(user.id);
         if (profile.role !== 'admin') {
             window.location.href = redirectTo;
             return null;
         }
-        return { user, profile };
+        return { user: user, profile: profile };
     },
 
-    async requireDriver(redirectTo = 'login.html') {
-        const user = await this.getCurrentUser();
+    requireDriver: async function(redirectTo) {
+        redirectTo = redirectTo || 'login.html';
+        var user = await this.getCurrentUser();
         if (!user) {
             window.location.href = redirectTo;
             return null;
         }
-        const profile = await this.getProfile(user.id);
+        var profile = await this.getProfile(user.id);
         if (profile.role !== 'driver') {
             window.location.href = redirectTo;
             return null;
         }
-        return { user, profile };
+        return { user: user, profile: profile };
     },
 
-    async sendPasswordReset(email) {
-        const redirectUrl = window.location.origin + pathPrefix() + 'reset-password.html';
-        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+    sendPasswordReset: async function(email) {
+        var redirectUrl = window.location.origin + pathPrefix() + 'reset-password.html';
+        var { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
             redirectTo: redirectUrl
         });
         if (error) throw error;
     },
 
-    async updatePassword(newPassword) {
-        const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    updatePassword: async function(newPassword) {
+        var { error } = await supabaseClient.auth.updateUser({ password: newPassword });
         if (error) throw error;
     }
 };
 
 function passwordStrength(password) {
-    let score = 0;
+    var score = 0;
     if (password.length >= 6) score++;
     if (password.length >= 10) score++;
     if (/[A-Z]/.test(password)) score++;
