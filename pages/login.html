@@ -59,13 +59,34 @@
         try {
             const { profile } = await AuthManager.login({ email, password });
             showToast('Login successful!', 'success');
-            setTimeout(() => {
-                if (profile.role === 'admin') {
+            
+            // Check if user is admin
+            if (profile.role === 'admin') {
+                setTimeout(() => {
                     window.location.href = 'admin-dashboard.html';
-                } else {
-                    window.location.href = 'booking.html';
-                }
-            }, 800);
+                }, 800);
+            } else {
+                // For customers, redirect to WhatsApp with login notification
+                setTimeout(() => {
+                    const message = encodeURIComponent(
+                        `🚐 *Luu Travels & Logistics Login*\n\n` +
+                        `👤 *Customer:* ${profile.full_name}\n` +
+                        `📧 *Email:* ${email}\n` +
+                        `📱 *Phone:* ${profile.phone || 'Not provided'}\n\n` +
+                        `✅ *Logged in successfully!*\n` +
+                        `Ready to book your trip.`
+                    );
+                    const whatsappUrl = `https://wa.me/${APP_CONFIG.whatsappNumber}?text=${message}`;
+                    
+                    // Open WhatsApp in new tab
+                    window.open(whatsappUrl, '_blank');
+                    
+                    // Then redirect to booking page
+                    setTimeout(() => {
+                        window.location.href = 'booking.html';
+                    }, 500);
+                }, 800);
+            }
         } catch (err) {
             showToast(err.message || 'Login failed. Check your details and try again.', 'error');
             btn.disabled = false;
