@@ -10,32 +10,60 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderProfile(profile, user);
     await loadBookingCount(user.id);
     setupMobileMenu();
-
-    // Logout handlers
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await AuthManager.logout();
-        window.location.href = '../index.html';
-    });
-
-    document.getElementById('mobileLogout').addEventListener('click', async (e) => {
-        e.preventDefault();
-        await AuthManager.logout();
-        window.location.href = '../index.html';
-    });
+    setupLogoutHandlers();
 });
 
+/* =====================================================================
+   LOGOUT HANDLERS
+   ===================================================================== */
+function setupLogoutHandlers() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await performLogout();
+        });
+    }
+
+    const mobileLogout = document.getElementById('mobileLogout');
+    if (mobileLogout) {
+        mobileLogout.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await performLogout();
+        });
+    }
+}
+
+async function performLogout() {
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        localStorage.removeItem('sb-gwzpzvwermsfnputttdo-auth-token');
+        showToast('Logged out successfully.', 'success');
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 500);
+    } catch (err) {
+        console.error('Logout error:', err);
+        showToast('Error logging out. Please try again.', 'error');
+    }
+}
+
+/* =====================================================================
+   MOBILE MENU
+   ===================================================================== */
 function setupMobileMenu() {
     const hamburger = document.getElementById('hamburgerBtn');
     const mobileMenu = document.getElementById('mobileMenu');
 
     if (hamburger && mobileMenu) {
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
+        hamburger.addEventListener('click', function() {
+            this.classList.toggle('active');
             mobileMenu.classList.toggle('open');
         });
 
         mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
+            link.addEventListener('click', function() {
                 hamburger.classList.remove('active');
                 mobileMenu.classList.remove('open');
             });
