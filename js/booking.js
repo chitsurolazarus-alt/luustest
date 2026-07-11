@@ -15,7 +15,7 @@ const BookingState = {
     dropoffCoords: null
 };
 
-const WHATSAPP_NUMBER = '27768457061'; // South African number without +
+const WHATSAPP_NUMBER = '27768457061';
 
 document.addEventListener('DOMContentLoaded', async () => {
     const user = await AuthManager.requireAuth('login.html');
@@ -27,19 +27,44 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadTimeSlots();
     setupUIHandlers();
     setupMobileMenu();
-
-    // Logout handler
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await AuthManager.logout();
-        window.location.href = '../index.html';
-    });
-
-    document.getElementById('mobileLogout').addEventListener('click', async (e) => {
-        e.preventDefault();
-        await AuthManager.logout();
-        window.location.href = '../index.html';
-    });
+    setupLogoutHandlers();
 });
+
+/* =====================================================================
+   LOGOUT HANDLERS
+   ===================================================================== */
+function setupLogoutHandlers() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await performLogout();
+        });
+    }
+
+    const mobileLogout = document.getElementById('mobileLogout');
+    if (mobileLogout) {
+        mobileLogout.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await performLogout();
+        });
+    }
+}
+
+async function performLogout() {
+    try {
+        const { error } = await supabaseClient.auth.signOut();
+        if (error) throw error;
+        localStorage.removeItem('sb-gwzpzvwermsfnputttdo-auth-token');
+        showToast('Logged out successfully.', 'success');
+        setTimeout(() => {
+            window.location.href = 'login.html';
+        }, 500);
+    } catch (err) {
+        console.error('Logout error:', err);
+        showToast('Error logging out. Please try again.', 'error');
+    }
+}
 
 /* =====================================================================
    MOBILE MENU
@@ -49,13 +74,13 @@ function setupMobileMenu() {
     const mobileMenu = document.getElementById('mobileMenu');
 
     if (hamburger && mobileMenu) {
-        hamburger.addEventListener('click', () => {
-            hamburger.classList.toggle('active');
+        hamburger.addEventListener('click', function() {
+            this.classList.toggle('active');
             mobileMenu.classList.toggle('open');
         });
 
         mobileMenu.querySelectorAll('a').forEach(link => {
-            link.addEventListener('click', () => {
+            link.addEventListener('click', function() {
                 hamburger.classList.remove('active');
                 mobileMenu.classList.remove('open');
             });
@@ -356,7 +381,6 @@ async function confirmBookingViaWhatsApp() {
     const totalPrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
     const bookingRef = `LUU-${Date.now().toString().slice(-8)}`;
 
-    // Save booking to database
     try {
         const { data: bookingData, error } = await supabaseClient.from('bookings').insert([{
             user_id: user.id,
@@ -376,9 +400,6 @@ async function confirmBookingViaWhatsApp() {
 
         if (error) throw error;
 
-        const booking = bookingData ? bookingData[0] : null;
-
-        // Build WhatsApp message
         const message = `
 🚐 *NEW BOOKING - Luu Travels & Logistics*
 
@@ -409,10 +430,8 @@ async function confirmBookingViaWhatsApp() {
 
         showToast('Booking saved! Opening WhatsApp...', 'success');
         
-        // Open WhatsApp in new tab
         window.open(whatsappUrl, '_blank');
         
-        // Redirect to dashboard
         setTimeout(() => {
             window.location.href = 'dashboard.html';
         }, 1000);
