@@ -456,11 +456,13 @@ async function confirmBookingViaWhatsApp() {
 
         showToast('Booking saved! Opening WhatsApp...', 'success');
         
+        // Open WhatsApp in new tab/window - works on both desktop and mobile
         window.open(whatsappUrl, '_blank');
         
+        // Redirect to dashboard after a short delay
         setTimeout(function() {
             window.location.href = 'dashboard.html';
-        }, 1000);
+        }, 1500);
 
     } catch (err) {
         showToast(err.message || 'Could not save booking. Please try again.', 'error');
