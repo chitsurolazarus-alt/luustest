@@ -516,6 +516,93 @@ async function deleteAd(id) {
     await loadAds();
 }
 
+/* ----------------------------- PROMO CODES ------------------------------ */
+async function loadPromos() {
+    var { data, error } = await supabaseClient.from('promo_codes').select('*').order('created_at', { ascending: false });
+    if (error) { showToast('Error loading promos: ' + error.message, 'error'); return; }
+    AdminState.promos = data || [];
+    renderPromos();
+}
+
+function renderPromos() {
+    var html = '';
+    for (var i = 0; i < AdminState.promos.length; i++) {
+        var p = AdminState.promos[i];
+        var isExpired = p.expires_at && new Date(p.expires_at) < new Date();
+        var statusClass = p.is_active && !isExpired ? 'badge-active' : 'badge-inactive';
+        var statusText = p.is_active && !isExpired ? 'Active' : (isExpired ? 'Expired' : 'Inactive');
+        
+        html += '<tr>';
+        html += '<td><strong>' + p.code + '</strong></td>';
+        html += '<td>' + (p.description || '—') + '</td>';
+        html += '<td>' + p.discount_percent + '%</td>';
+        html += '<td>' + (p.used_count || 0) + '/' + (p.max_uses || '∞') + '</td>';
+        html += '<td><span class="badge ' + statusClass + '">' + statusText + '</span></td>';
+        html += '<td>' + (p.expires_at ? new Date(p.expires_at).toLocaleDateString() : 'Never') + '</td>';
+        html += '<td class="table-actions">';
+        html += '<button class="btn ' + (p.is_active ? 'btn-outline' : 'btn-navy') + ' btn-sm" data-toggle-promo="' + p.id + '" data-active="' + p.is_active + '" style="' + (p.is_active ? 'color:var(--primary); border-color:var(--primary);' : '') + '">' + (p.is_active ? 'Deactivate' : 'Activate') + '</button>';
+        html += '<button class="btn btn-danger btn-sm" data-delete-promo="' + p.id + '">Delete</button>';
+        html += '</td></tr>';
+    }
+    document.querySelector('#promosTable tbody').innerHTML = html || '<tr><td colspan="7" style="text-align:center; color:var(--gray-600);">No promo codes created yet.</td></tr>';
+
+    document.querySelectorAll('[data-toggle-promo]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            togglePromoActive(this.dataset.togglePromo, this.dataset.active === 'true');
+        });
+    });
+    
+    document.querySelectorAll('[data-delete-promo]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            deletePromo(this.dataset.deletePromo);
+        });
+    });
+}
+
+async function togglePromoActive(id, isActive) {
+    var { error } = await supabaseClient.from('promo_codes').update({ is_active: !isActive }).eq('id', id);
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast('Promo ' + (!isActive ? 'activated' : 'deactivated') + '.', 'success');
+    await loadPromos();
+}
+
+async function deletePromo(id) {
+    if (!confirm('Delete this promo code?')) return;
+    var { error } = await supabaseClient.from('promo_codes').delete().eq('id', id);
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast('Promo deleted.', 'success');
+    await loadPromos();
+}
+
+// Add to setupModals
+document.getElementById('addPromoBtn').addEventListener('click', function() { openModal('promoModal'); });
+
+// Add to setupForms
+document.getElementById('promoForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    var payload = {
+        code: document.getElementById('promoCode').value.trim().toUpperCase(),
+        description: document.getElementById('promoDescription').value.trim() || null,
+        discount_percent: parseFloat(document.getElementById('promoDiscount').value),
+        is_active: true,
+        max_uses: parseInt(document.getElementById('promoMaxUses').value) || 0,
+        expires_at: document.getElementById('promoExpires').value || null
+    };
+    var { error } = await supabaseClient.from('promo_codes').insert([payload]);
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast('Promo code added successfully.', 'success');
+    closeModal('promoModal');
+    await loadPromos();
+});
+
+// Add to refreshAll
+await loadPromos();
+
+// Add to AdminState
+promos: []
+
+// Add to navigation titles
+promos: 'Promo Code Management'
 /* ------------------------------ REVIEWS ------------------------------ */
 function renderReviews() {
     var html = '';
