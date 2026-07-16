@@ -25,6 +25,7 @@
             <button class="admin-nav-item" data-section="trips">📅 Trips</button>
             <button class="admin-nav-item" data-section="ads">📢 Ads</button>
             <button class="admin-nav-item" data-section="timeslots">⏰ Time Slots</button>
+            <button class="admin-nav-item" data-section="promos">🎫 Promo Codes</button>
             <button class="admin-nav-item" data-section="reviews">⭐ Reviews</button>
         </nav>
         <div class="admin-nav-footer">
@@ -149,52 +150,6 @@
                 </div>
             </div>
         </section>
-<!-- PROMO CODES SECTION -->
-<section class="admin-section" id="section-promos">
-    <div class="admin-card">
-        <div class="admin-card-header">
-            <h3>Promo Codes</h3>
-            <button class="btn btn-primary btn-sm" id="addPromoBtn">+ Add Promo</button>
-        </div>
-        <p style="color:var(--gray-600); font-size:0.85rem; margin-bottom:14px;">
-            Create discount promo codes for customers to use during booking.
-        </p>
-        <div class="table-wrapper">
-            <table class="data-table" id="promosTable">
-                <thead><tr><th>Code</th><th>Description</th><th>Discount</th><th>Uses</th><th>Status</th><th>Expires</th><th>Actions</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-</section>
-<!-- MODAL: ADD PROMO -->
-<div class="modal-overlay" id="promoModal">
-    <div class="modal-box">
-        <button class="modal-close" data-close="promoModal">&times;</button>
-        <h3>Add Promo Code</h3>
-        <form id="promoForm">
-            <div class="form-group"><label>Promo Code</label><input type="text" id="promoCode" required placeholder="e.g. SUMMER20"></div>
-            <div class="form-group"><label>Description</label><input type="text" id="promoDescription" placeholder="e.g. 20% off summer special"></div>
-            <div class="form-group"><label>Discount Percentage</label><input type="number" id="promoDiscount" min="1" max="100" required placeholder="10"></div>
-            <div class="form-group"><label>Max Uses</label><input type="number" id="promoMaxUses" min="1" placeholder="100"></div>
-            <div class="form-group"><label>Expiry Date (optional)</label><input type="datetime-local" id="promoExpires"></div>
-            <button type="submit" class="btn btn-primary btn-block">Save Promo</button>
-        </form>
-    </div>
-</div>        
-        <!-- REVIEWS SECTION -->
-        <section class="admin-section" id="section-reviews">
-            <div class="admin-card">
-                <div class="admin-card-header"><h3>Customer Reviews</h3></div>
-                <p style="color:var(--gray-600); font-size:0.85rem; margin-bottom:14px;">Approved reviews appear as testimonials on the public website.</p>
-                <div class="table-wrapper">
-                    <table class="data-table" id="reviewsTable">
-                        <thead><tr><th>Customer</th><th>Rating</th><th>Comment</th><th>Status</th><th>Actions</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
 
         <!-- TIME SLOTS SECTION -->
         <section class="admin-section" id="section-timeslots">
@@ -210,6 +165,39 @@
                 <div class="table-wrapper">
                     <table class="data-table" id="slotsTable">
                         <thead><tr><th>Route</th><th>Departure Time</th><th>Status</th><th>Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROMO CODES SECTION -->
+        <section class="admin-section" id="section-promos">
+            <div class="admin-card">
+                <div class="admin-card-header">
+                    <h3>Promo Codes</h3>
+                    <button class="btn btn-primary btn-sm" id="addPromoBtn">+ Add Promo</button>
+                </div>
+                <p style="color:var(--gray-600); font-size:0.85rem; margin-bottom:14px;">
+                    Create discount promo codes for customers to use during booking.
+                </p>
+                <div class="table-wrapper">
+                    <table class="data-table" id="promosTable">
+                        <thead><tr><th>Code</th><th>Description</th><th>Discount</th><th>Uses</th><th>Status</th><th>Expires</th><th>Actions</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- REVIEWS SECTION -->
+        <section class="admin-section" id="section-reviews">
+            <div class="admin-card">
+                <div class="admin-card-header"><h3>Customer Reviews</h3></div>
+                <p style="color:var(--gray-600); font-size:0.85rem; margin-bottom:14px;">Approved reviews appear as testimonials on the public website.</p>
+                <div class="table-wrapper">
+                    <table class="data-table" id="reviewsTable">
+                        <thead><tr><th>Customer</th><th>Rating</th><th>Comment</th><th>Status</th><th>Actions</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -247,7 +235,7 @@
                 <div class="form-group"><label>Vehicle Model</label><input type="text" id="vehicleModel" required></div>
                 <div class="form-group"><label>Vehicle Color</label><input type="text" id="vehicleColor" required></div>
             </div>
-            <div class="form-group"><label>Capacity</label><input type="number" id="vehicleCapacity" value="14" max="14" min="1" required></div>
+            <div class="form-group"><label>Capacity</label><input type="number" id="vehicleCapacity" value="9" max="9" min="1" required></div>
             <button type="submit" class="btn btn-primary btn-block">Save Driver</button>
         </form>
     </div>
@@ -276,7 +264,7 @@
             </div>
             <div class="form-group"><label>Departure Date & Time</label><input type="datetime-local" id="tripDeparture" required></div>
             <div class="form-group"><label>Distance (km)</label><input type="number" id="tripDistance" step="0.1" required></div>
-            <div class="form-group"><label>Available Seats</label><input type="number" id="tripSeats" value="14" max="14" min="1" required></div>
+            <div class="form-group"><label>Available Seats</label><input type="number" id="tripSeats" value="9" max="9" min="1" required></div>
             <div class="form-group"><label>Total Price per Seat (auto-calculated, editable)</label><input type="number" id="tripPrice" step="0.01" required></div>
             <button type="submit" class="btn btn-primary btn-block">Save Trip</button>
         </form>
@@ -319,6 +307,22 @@
             </div>
             <div class="form-group"><label>Departure Time</label><input type="time" id="slotTime" required></div>
             <button type="submit" class="btn btn-primary btn-block">Save Time Slot</button>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: ADD PROMO -->
+<div class="modal-overlay" id="promoModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="promoModal">&times;</button>
+        <h3>Add Promo Code</h3>
+        <form id="promoForm">
+            <div class="form-group"><label>Promo Code</label><input type="text" id="promoCode" required placeholder="e.g. SUMMER20"></div>
+            <div class="form-group"><label>Description</label><input type="text" id="promoDescription" placeholder="e.g. 20% off summer special"></div>
+            <div class="form-group"><label>Discount Percentage</label><input type="number" id="promoDiscount" min="1" max="100" required placeholder="10"></div>
+            <div class="form-group"><label>Max Uses</label><input type="number" id="promoMaxUses" min="1" placeholder="100"></div>
+            <div class="form-group"><label>Expiry Date (optional)</label><input type="datetime-local" id="promoExpires"></div>
+            <button type="submit" class="btn btn-primary btn-block">Save Promo</button>
         </form>
     </div>
 </div>
