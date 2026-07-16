@@ -136,10 +136,11 @@ function setupBookingTypeButtons() {
                 document.getElementById('payWithCardBtn').style.display = 'none';
                 document.getElementById('payWithWhatsAppBtn').textContent = '📱 Get Quote via WhatsApp';
                 document.getElementById('payWithWhatsAppBtn').style.background = '#25D366';
+                document.getElementById('payWithCardBtn').style.display = 'none';
             } else if (BookingState.bookingType === 'parcel') {
                 document.getElementById('specialRequestsGroup').style.display = 'block';
                 document.getElementById('specialRequests').placeholder = 'Parcel details: size, weight, contents...';
-                document.getElementById('payWithCardBtn').style.display = 'block';
+                document.getElementById('payWithCardBtn').style.display = 'none';
                 document.getElementById('payWithWhatsAppBtn').textContent = '📱 Book via WhatsApp';
                 document.getElementById('payWithWhatsAppBtn').style.background = '#25D366';
             } else {
@@ -586,8 +587,6 @@ async function handlePaymentSuccess(response, totalAmount) {
 
         if (error) throw error;
 
-        var booking = bookingData ? bookingData[0] : null;
-
         // Send WhatsApp notification for successful payment
         var message = '💰 *PAYMENT SUCCESSFUL - Luu Travels & Logistics*\n\n';
         message += '📋 *Reference:* ' + bookingRef + '\n';
@@ -613,13 +612,13 @@ async function handlePaymentSuccess(response, totalAmount) {
 
         showToast('Payment successful! Booking confirmed.', 'success');
         
-        // Open WhatsApp
+        // Open WhatsApp - works on both desktop and mobile
         window.open(whatsappUrl, '_blank');
         
-        // Redirect to dashboard
+        // Redirect to dashboard after delay
         setTimeout(function() {
             window.location.href = 'dashboard.html';
-        }, 1500);
+        }, 2000);
 
     } catch (err) {
         showToast(err.message || 'Could not save booking after payment. Please contact support.', 'error');
@@ -727,7 +726,7 @@ async function confirmBookingViaWhatsApp() {
         
         setTimeout(function() {
             window.location.href = 'dashboard.html';
-        }, 1500);
+        }, 2000);
 
     } catch (err) {
         showToast(err.message || 'Could not save booking. Please try again.', 'error');
