@@ -12,7 +12,12 @@ var BookingState = {
     pickupAddress: null,
     dropoffAddress: null,
     pickupCoords: null,
-    dropoffCoords: null
+    dropoffCoords: null,
+    bookingType: 'passenger',
+    promoCode: null,
+    promoDiscount: 0,
+    bookingRef: null,
+    bookingId: null
 };
 
 var WHATSAPP_NUMBER = '27768457061';
@@ -28,10 +33,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupUIHandlers();
     setupMobileMenu();
     setupLogout();
+    setupBookingTypeButtons();
+    setupPromoHandler();
 });
 
 /* =====================================================================
-   LOGOUT - SIMPLE AND RELIABLE
+   LOGOUT
    ===================================================================== */
 function setupLogout() {
     var logoutBtn = document.getElementById('logoutBtn');
@@ -106,7 +113,100 @@ function setupMobileMenu() {
     }
 }
 
-// Map click handler
+/* =====================================================================
+   BOOKING TYPE BUTTONS
+   ===================================================================== */
+function setupBookingTypeButtons() {
+    var btns = document.querySelectorAll('.booking-type-btn');
+    for (var i = 0; i < btns.length; i++) {
+        btns[i].onclick = function() {
+            var allBtns = document.querySelectorAll('.booking-type-btn');
+            for (var b = 0; b < allBtns.length; b++) {
+                allBtns[b].style.background = 'var(--secondary)';
+                allBtns[b].style.color = 'var(--gray-600)';
+            }
+            this.style.background = 'var(--primary)';
+            this.style.color = 'var(--secondary)';
+            
+            BookingState.bookingType = this.dataset.type;
+            
+            if (BookingState.bookingType === 'quote') {
+                document.getElementById('specialRequestsGroup').style.display = 'block';
+                document.getElementById('specialRequests').placeholder = 'Describe your parcel or special request for a quote...';
+                document.getElementById('payWithCardBtn').style.display = 'none';
+                document.getElementById('payWithWhatsAppBtn').textContent = '📱 Get Quote via WhatsApp';
+                document.getElementById('payWithWhatsAppBtn').style.background = '#25D366';
+            } else if (BookingState.bookingType === 'parcel') {
+                document.getElementById('specialRequestsGroup').style.display = 'block';
+                document.getElementById('specialRequests').placeholder = 'Parcel details: size, weight, contents...';
+                document.getElementById('payWithCardBtn').style.display = 'block';
+                document.getElementById('payWithWhatsAppBtn').textContent = '📱 Book via WhatsApp';
+                document.getElementById('payWithWhatsAppBtn').style.background = '#25D366';
+            } else {
+                document.getElementById('specialRequestsGroup').style.display = 'block';
+                document.getElementById('specialRequests').placeholder = 'e.g. extra luggage, wheelchair access...';
+                document.getElementById('payWithCardBtn').style.display = 'block';
+                document.getElementById('payWithWhatsAppBtn').textContent = '📱 Book via WhatsApp';
+                document.getElementById('payWithWhatsAppBtn').style.background = '#25D366';
+            }
+        };
+    }
+}
+
+/* =====================================================================
+   PROMO CODE HANDLER
+   ===================================================================== */
+function setupPromoHandler() {
+    document.getElementById('applyPromoBtn').onclick = async function() {
+        var code = document.getElementById('promoCode').value.trim().toUpperCase();
+        if (!code) {
+            showToast('Please enter a promo code.', 'error');
+            return;
+        }
+
+        var { data, error } = await supabaseClient
+            .from('promo_codes')
+            .select('*')
+            .eq('code', code)
+            .eq('is_active', true)
+            .single();
+
+        if (error || !data) {
+            document.getElementById('promoMessage').innerHTML = '<span style="color:var(--danger);">❌ Invalid or expired promo code.</span>';
+            return;
+        }
+
+        // Check if promo is expired
+        if (data.expires_at && new Date(data.expires_at) < new Date()) {
+            document.getElementById('promoMessage').innerHTML = '<span style="color:var(--danger);">❌ This promo code has expired.</span>';
+            return;
+        }
+
+        // Check if user has already used this promo
+        var { data: usedCheck } = await supabaseClient
+            .from('bookings')
+            .select('id')
+            .eq('user_id', BookingState.currentUser.id)
+            .eq('promo_code_id', data.id)
+            .limit(1);
+
+        if (usedCheck && usedCheck.length > 0) {
+            document.getElementById('promoMessage').innerHTML = '<span style="color:var(--danger);">❌ You have already used this promo code.</span>';
+            return;
+        }
+
+        // Apply discount
+        BookingState.promoCode = data;
+        BookingState.promoDiscount = data.discount_percent || 0;
+        
+        document.getElementById('promoMessage').innerHTML = '<span style="color:var(--success);">✅ Promo code applied! ' + data.discount_percent + '% off.</span>';
+        updatePriceSummary();
+    };
+}
+
+/* =====================================================================
+   MAP FUNCTIONS
+   ===================================================================== */
 var clickStage = 'pickup';
 
 function setupMapClicks() {
@@ -219,14 +319,32 @@ function calculatePrice() {
     );
     
     BookingState.distance = distance;
-    var price = distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    updatePriceSummary();
     
     document.getElementById('distanceValue').textContent = distance.toFixed(1) + ' km';
-    document.getElementById('estimatedPriceValue').textContent = formatCurrency(price);
-    document.getElementById('distanceDisplay').textContent = distance.toFixed(1) + ' km';
-    document.getElementById('totalPrice').textContent = formatCurrency(price);
 }
 
+function updatePriceSummary() {
+    var basePrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    var discount = BookingState.promoDiscount / 100 * basePrice;
+    var total = basePrice - discount;
+    
+    document.getElementById('estimatedPriceValue').textContent = formatCurrency(total);
+    document.getElementById('distanceDisplay').textContent = BookingState.distance.toFixed(1) + ' km';
+    document.getElementById('passengerCount').textContent = BookingState.seats;
+    document.getElementById('totalPrice').textContent = formatCurrency(total);
+    
+    if (discount > 0) {
+        document.getElementById('discountRow').style.display = 'flex';
+        document.getElementById('discountDisplay').textContent = '- ' + formatCurrency(discount);
+    } else {
+        document.getElementById('discountRow').style.display = 'none';
+    }
+}
+
+/* =====================================================================
+   TIME SLOTS
+   ===================================================================== */
 async function loadTimeSlots() {
     var { data, error } = await supabaseClient
         .from('time_slots')
@@ -333,6 +451,9 @@ function renderTimeSlots(slots) {
     }
 }
 
+/* =====================================================================
+   UI HANDLERS
+   ===================================================================== */
 function setupUIHandlers() {
     var chips = document.querySelectorAll('.route-chip');
     for (var i = 0; i < chips.length; i++) {
@@ -365,7 +486,7 @@ function setupUIHandlers() {
     };
     
     document.getElementById('seatPlus').onclick = function() {
-        if (BookingState.seats < 14) { 
+        if (BookingState.seats < APP_CONFIG.maxSeats) { 
             BookingState.seats++; 
             document.getElementById('seatCount').value = BookingState.seats;
             document.getElementById('passengerCount').textContent = BookingState.seats;
@@ -373,29 +494,151 @@ function setupUIHandlers() {
         }
     };
 
-    document.getElementById('confirmBookingBtn').onclick = confirmBookingViaWhatsApp;
+    document.getElementById('payWithCardBtn').onclick = initiatePaystackPayment;
+    document.getElementById('payWithWhatsAppBtn').onclick = confirmBookingViaWhatsApp;
 }
 
-async function confirmBookingViaWhatsApp() {
-    if (!BookingState.selectedTime) {
-        showToast('Please select a departure time.', 'error');
-        return;
-    }
-    
-    if (!BookingState.pickupAddress || !BookingState.dropoffAddress) {
-        showToast('Please set both pickup and drop-off locations on the map.', 'error');
-        return;
-    }
-
-    if (BookingState.distance === 0) {
-        showToast('Please set both pickup and drop-off locations to calculate distance.', 'error');
-        return;
-    }
+/* =====================================================================
+   PAYSTACK PAYMENT
+   ===================================================================== */
+async function initiatePaystackPayment() {
+    if (!validateBooking()) return;
 
     var user = BookingState.currentUser;
     var { data: profile } = await supabaseClient
         .from('users')
-        .select('full_name, phone')
+        .select('full_name, phone, email')
+        .eq('id', user.id)
+        .single();
+
+    var basePrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    var discount = BookingState.promoDiscount / 100 * basePrice;
+    var total = basePrice - discount;
+
+    var handler = PaystackPop.setup({
+        key: APP_CONFIG.paystackPublicKey,
+        email: user.email,
+        amount: Math.round(total * 100),
+        currency: 'ZAR',
+        ref: 'LUU-' + Date.now().toString().slice(-8),
+        metadata: {
+            custom_fields: [
+                { display_name: "Customer Name", value: profile.full_name },
+                { display_name: "Phone", value: profile.phone },
+                { display_name: "Pickup", value: BookingState.pickupAddress },
+                { display_name: "Dropoff", value: BookingState.dropoffAddress },
+                { display_name: "Passengers", value: BookingState.seats },
+                { display_name: "Distance", value: BookingState.distance.toFixed(1) + ' km' }
+            ]
+        },
+        callback: function(response) {
+            handlePaymentSuccess(response, total);
+        },
+        onClose: function() {
+            showToast('Payment cancelled.', 'info');
+        }
+    });
+
+    handler.openIframe();
+}
+
+async function handlePaymentSuccess(response, totalAmount) {
+    try {
+        var user = BookingState.currentUser;
+        var { data: profile } = await supabaseClient
+            .from('users')
+            .select('full_name, phone, email')
+            .eq('id', user.id)
+            .single();
+
+        var { data: slotData } = await supabaseClient
+            .from('time_slots')
+            .select('route, departure_time')
+            .eq('id', BookingState.selectedTime)
+            .single();
+
+        var date = document.getElementById('tripDate').value;
+        var formattedDate = new Date(date).toLocaleDateString('en-ZA', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+
+        var bookingRef = 'LUU-' + Date.now().toString().slice(-8);
+
+        // Save booking with payment status as paid
+        var { data: bookingData, error } = await supabaseClient.from('bookings').insert([{
+            user_id: user.id,
+            trip_id: null,
+            number_of_seats: BookingState.seats,
+            total_price: totalAmount,
+            payment_method: 'card',
+            payment_status: 'paid',
+            booking_status: 'confirmed',
+            pickup_location: BookingState.pickupAddress,
+            dropoff_location: BookingState.dropoffAddress,
+            pickup_coordinates: BookingState.pickupCoords,
+            dropoff_coordinates: BookingState.dropoffCoords,
+            special_requests: document.getElementById('specialRequests').value.trim() || null,
+            booking_reference: bookingRef,
+            promo_code_id: BookingState.promoCode ? BookingState.promoCode.id : null,
+            booking_type: BookingState.bookingType,
+            paystack_reference: response.reference
+        }]).select();
+
+        if (error) throw error;
+
+        var booking = bookingData ? bookingData[0] : null;
+
+        // Send WhatsApp notification for successful payment
+        var message = '💰 *PAYMENT SUCCESSFUL - Luu Travels & Logistics*\n\n';
+        message += '📋 *Reference:* ' + bookingRef + '\n';
+        message += '👤 *Customer:* ' + (profile?.full_name || 'Unknown') + '\n';
+        message += '📱 *Phone:* ' + (profile?.phone || 'Not provided') + '\n';
+        message += '📧 *Email:* ' + user.email + '\n\n';
+        message += '📍 *Route:* ' + (slotData?.route?.replace('-', ' → ') || 'Unknown') + '\n';
+        message += '📅 *Date:* ' + formattedDate + '\n';
+        message += '🕐 *Time:* ' + (slotData?.departure_time || 'Unknown') + '\n\n';
+        message += '📍 *Pickup:* ' + BookingState.pickupAddress + '\n';
+        message += '📍 *Drop-off:* ' + BookingState.dropoffAddress + '\n\n';
+        message += '📏 *Distance:* ' + BookingState.distance.toFixed(1) + ' km\n';
+        message += '👥 *Passengers:* ' + BookingState.seats + '\n';
+        message += '💰 *Amount Paid:* R' + totalAmount.toFixed(2) + '\n';
+        message += '💳 *Payment Method:* Card (Paystack)\n';
+        message += '📝 *Reference:* ' + response.reference + '\n\n';
+        message += '📝 *Special Requests:* ' + (document.getElementById('specialRequests').value.trim() || 'None') + '\n\n';
+        message += '✅ *Payment Confirmed! Trip is now confirmed.*\n';
+        message += '---\n*Please arrange transport for this booking.*';
+
+        var encodedMessage = encodeURIComponent(message);
+        var whatsappUrl = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodedMessage;
+
+        showToast('Payment successful! Booking confirmed.', 'success');
+        
+        // Open WhatsApp
+        window.open(whatsappUrl, '_blank');
+        
+        // Redirect to dashboard
+        setTimeout(function() {
+            window.location.href = 'dashboard.html';
+        }, 1500);
+
+    } catch (err) {
+        showToast(err.message || 'Could not save booking after payment. Please contact support.', 'error');
+    }
+}
+
+/* =====================================================================
+   WHATSAPP BOOKING
+   ===================================================================== */
+async function confirmBookingViaWhatsApp() {
+    if (!validateBooking()) return;
+
+    var user = BookingState.currentUser;
+    var { data: profile } = await supabaseClient
+        .from('users')
+        .select('full_name, phone, email')
         .eq('id', user.id)
         .single();
 
@@ -413,7 +656,9 @@ async function confirmBookingViaWhatsApp() {
         day: 'numeric' 
     });
 
-    var totalPrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    var basePrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
+    var discount = BookingState.promoDiscount / 100 * basePrice;
+    var total = basePrice - discount;
     var bookingRef = 'LUU-' + Date.now().toString().slice(-8);
 
     try {
@@ -421,45 +666,68 @@ async function confirmBookingViaWhatsApp() {
             user_id: user.id,
             trip_id: null,
             number_of_seats: BookingState.seats,
-            total_price: totalPrice,
-            payment_method: 'cash',
-            payment_status: 'pending',
+            total_price: total,
+            payment_method: BookingState.bookingType === 'quote' ? 'quote' : 'cash',
+            payment_status: BookingState.bookingType === 'quote' ? 'pending' : 'pending',
             booking_status: 'pending',
             pickup_location: BookingState.pickupAddress,
             dropoff_location: BookingState.dropoffAddress,
             pickup_coordinates: BookingState.pickupCoords,
             dropoff_coordinates: BookingState.dropoffCoords,
             special_requests: document.getElementById('specialRequests').value.trim() || null,
-            booking_reference: bookingRef
+            booking_reference: bookingRef,
+            promo_code_id: BookingState.promoCode ? BookingState.promoCode.id : null,
+            booking_type: BookingState.bookingType
         }]).select();
 
         if (error) throw error;
 
-        var message = '🚐 *NEW BOOKING - Luu Travels & Logistics*\n\n';
-        message += '📋 *Reference:* ' + bookingRef + '\n';
-        message += '👤 *Customer:* ' + (profile?.full_name || 'Unknown') + '\n';
-        message += '📱 *Phone:* ' + (profile?.phone || 'Not provided') + '\n';
-        message += '📧 *Email:* ' + user.email + '\n\n';
-        message += '📍 *Route:* ' + (slotData?.route?.replace('-', ' → ') || 'Unknown') + '\n';
-        message += '📅 *Date:* ' + formattedDate + '\n';
-        message += '🕐 *Time:* ' + (slotData?.departure_time || 'Unknown') + '\n\n';
-        message += '📍 *Pickup:* ' + BookingState.pickupAddress + '\n';
-        message += '📍 *Drop-off:* ' + BookingState.dropoffAddress + '\n\n';
-        message += '📏 *Distance:* ' + BookingState.distance.toFixed(1) + ' km\n';
-        message += '👥 *Passengers:* ' + BookingState.seats + '\n';
-        message += '💰 *Total Price:* R' + totalPrice.toFixed(2) + '\n\n';
-        message += '📝 *Special Requests:* ' + (document.getElementById('specialRequests').value.trim() || 'None') + '\n\n';
-        message += '---\n*Please confirm this booking and arrange transport.*';
+        var booking = bookingData ? bookingData[0] : null;
+
+        var message = '';
+        if (BookingState.bookingType === 'quote') {
+            message = '💰 *QUOTE REQUEST - Luu Travels & Logistics*\n\n';
+            message += '📋 *Reference:* ' + bookingRef + '\n';
+            message += '👤 *Customer:* ' + (profile?.full_name || 'Unknown') + '\n';
+            message += '📱 *Phone:* ' + (profile?.phone || 'Not provided') + '\n';
+            message += '📧 *Email:* ' + user.email + '\n\n';
+            message += '📍 *Route:* ' + (slotData?.route?.replace('-', ' → ') || 'Unknown') + '\n';
+            message += '📅 *Date:* ' + formattedDate + '\n';
+            message += '🕐 *Time:* ' + (slotData?.departure_time || 'Unknown') + '\n\n';
+            message += '📍 *Pickup:* ' + BookingState.pickupAddress + '\n';
+            message += '📍 *Drop-off:* ' + BookingState.dropoffAddress + '\n\n';
+            message += '📏 *Distance:* ' + BookingState.distance.toFixed(1) + ' km\n';
+            message += '👥 *Passengers:* ' + BookingState.seats + '\n';
+            message += '📝 *Special Requests:* ' + (document.getElementById('specialRequests').value.trim() || 'None') + '\n\n';
+            message += '---\n*Please provide a quote for this request.*';
+        } else {
+            message = '🚐 *NEW BOOKING - Luu Travels & Logistics*\n\n';
+            message += '📋 *Reference:* ' + bookingRef + '\n';
+            message += '👤 *Customer:* ' + (profile?.full_name || 'Unknown') + '\n';
+            message += '📱 *Phone:* ' + (profile?.phone || 'Not provided') + '\n';
+            message += '📧 *Email:* ' + user.email + '\n\n';
+            message += '📍 *Route:* ' + (slotData?.route?.replace('-', ' → ') || 'Unknown') + '\n';
+            message += '📅 *Date:* ' + formattedDate + '\n';
+            message += '🕐 *Time:* ' + (slotData?.departure_time || 'Unknown') + '\n\n';
+            message += '📍 *Pickup:* ' + BookingState.pickupAddress + '\n';
+            message += '📍 *Drop-off:* ' + BookingState.dropoffAddress + '\n\n';
+            message += '📏 *Distance:* ' + BookingState.distance.toFixed(1) + ' km\n';
+            message += '👥 *Passengers:* ' + BookingState.seats + '\n';
+            message += '💰 *Total Price:* R' + total.toFixed(2) + '\n';
+            if (BookingState.promoCode) {
+                message += '🎫 *Promo Applied:* ' + BookingState.promoCode.code + ' (' + BookingState.promoDiscount + '% off)\n';
+            }
+            message += '📝 *Special Requests:* ' + (document.getElementById('specialRequests').value.trim() || 'None') + '\n\n';
+            message += '---\n*Please confirm this booking and arrange transport.*';
+        }
 
         var encodedMessage = encodeURIComponent(message);
         var whatsappUrl = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodedMessage;
 
         showToast('Booking saved! Opening WhatsApp...', 'success');
         
-        // Open WhatsApp in new tab/window - works on both desktop and mobile
         window.open(whatsappUrl, '_blank');
         
-        // Redirect to dashboard after a short delay
         setTimeout(function() {
             window.location.href = 'dashboard.html';
         }, 1500);
@@ -467,4 +735,34 @@ async function confirmBookingViaWhatsApp() {
     } catch (err) {
         showToast(err.message || 'Could not save booking. Please try again.', 'error');
     }
+}
+
+/* =====================================================================
+   VALIDATION
+   ===================================================================== */
+function validateBooking() {
+    if (!BookingState.selectedTime) {
+        showToast('Please select a departure time.', 'error');
+        return false;
+    }
+    
+    if (!BookingState.pickupAddress || !BookingState.dropoffAddress) {
+        showToast('Please set both pickup and drop-off locations on the map.', 'error');
+        return false;
+    }
+
+    if (BookingState.distance === 0) {
+        showToast('Please set both pickup and drop-off locations to calculate distance.', 'error');
+        return false;
+    }
+
+    if (BookingState.bookingType === 'quote') {
+        var specialRequests = document.getElementById('specialRequests').value.trim();
+        if (!specialRequests) {
+            showToast('Please describe your parcel or request for a quote.', 'error');
+            return false;
+        }
+    }
+
+    return true;
 }
