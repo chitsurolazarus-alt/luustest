@@ -136,7 +136,6 @@ function setupBookingTypeButtons() {
                 document.getElementById('payWithCardBtn').style.display = 'none';
                 document.getElementById('payWithWhatsAppBtn').textContent = '📱 Get Quote via WhatsApp';
                 document.getElementById('payWithWhatsAppBtn').style.background = '#25D366';
-                document.getElementById('payWithCardBtn').style.display = 'none';
             } else if (BookingState.bookingType === 'parcel') {
                 document.getElementById('specialRequestsGroup').style.display = 'block';
                 document.getElementById('specialRequests').placeholder = 'Parcel details: size, weight, contents...';
@@ -497,6 +496,19 @@ function setupUIHandlers() {
 }
 
 /* =====================================================================
+   WHATSAPP REDIRECT HELPER - WORKS ON MOBILE
+   ===================================================================== */
+function redirectToWhatsApp(url) {
+    // Try opening in same window first (works best on mobile)
+    window.location.href = url;
+    
+    // Also try opening in new window as fallback for desktop
+    setTimeout(function() {
+        window.open(url, '_blank');
+    }, 100);
+}
+
+/* =====================================================================
    PAYSTACK PAYMENT
    ===================================================================== */
 async function initiatePaystackPayment() {
@@ -610,15 +622,12 @@ async function handlePaymentSuccess(response, totalAmount) {
         var encodedMessage = encodeURIComponent(message);
         var whatsappUrl = 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodedMessage;
 
-        showToast('Payment successful! Booking confirmed.', 'success');
+        showToast('Payment successful! Opening WhatsApp...', 'success');
         
-        // Open WhatsApp - works on both desktop and mobile
-        window.open(whatsappUrl, '_blank');
-        
-        // Redirect to dashboard after delay
+        // Redirect to WhatsApp - works on mobile
         setTimeout(function() {
-            window.location.href = 'dashboard.html';
-        }, 2000);
+            window.location.href = whatsappUrl;
+        }, 500);
 
     } catch (err) {
         showToast(err.message || 'Could not save booking after payment. Please contact support.', 'error');
@@ -722,11 +731,10 @@ async function confirmBookingViaWhatsApp() {
 
         showToast('Booking saved! Opening WhatsApp...', 'success');
         
-        window.open(whatsappUrl, '_blank');
-        
+        // Redirect to WhatsApp - works on mobile
         setTimeout(function() {
-            window.location.href = 'dashboard.html';
-        }, 2000);
+            window.location.href = whatsappUrl;
+        }, 500);
 
     } catch (err) {
         showToast(err.message || 'Could not save booking. Please try again.', 'error');
