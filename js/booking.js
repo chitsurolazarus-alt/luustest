@@ -176,13 +176,11 @@ function setupPromoHandler() {
             return;
         }
 
-        // Check if promo is expired
         if (data.expires_at && new Date(data.expires_at) < new Date()) {
             document.getElementById('promoMessage').innerHTML = '<span style="color:var(--danger);">❌ This promo code has expired.</span>';
             return;
         }
 
-        // Check if user has already used this promo
         var { data: usedCheck } = await supabaseClient
             .from('bookings')
             .select('id')
@@ -195,7 +193,6 @@ function setupPromoHandler() {
             return;
         }
 
-        // Apply discount
         BookingState.promoCode = data;
         BookingState.promoDiscount = data.discount_percent || 0;
         
@@ -669,7 +666,7 @@ async function confirmBookingViaWhatsApp() {
             total_price: total,
             payment_method: BookingState.bookingType === 'quote' ? 'quote' : 'cash',
             payment_status: BookingState.bookingType === 'quote' ? 'pending' : 'pending',
-            booking_status: 'pending',
+            booking_status: BookingState.bookingType === 'quote' ? 'quote' : 'pending',
             pickup_location: BookingState.pickupAddress,
             dropoff_location: BookingState.dropoffAddress,
             pickup_coordinates: BookingState.pickupCoords,
