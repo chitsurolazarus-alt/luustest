@@ -8,6 +8,7 @@ var AdminState = {
     bookings: [],
     ads: [],
     slots: [],
+    promos: [],
     reviews: []
 };
 
@@ -37,6 +38,7 @@ function setupNavigation() {
         trips: 'Trip Management',
         ads: 'Advertisement Management',
         timeslots: 'Time Slot Management',
+        promos: 'Promo Code Management',
         reviews: 'Review Moderation'
     };
     var navItems = document.querySelectorAll('.admin-nav-item[data-section]');
@@ -63,6 +65,7 @@ function setupModals() {
     document.getElementById('addTripBtn').addEventListener('click', function() { openModal('tripModal'); });
     document.getElementById('addAdBtn').addEventListener('click', function() { openModal('adModal'); });
     document.getElementById('addSlotBtn').addEventListener('click', function() { openModal('slotModal'); });
+    document.getElementById('addPromoBtn').addEventListener('click', function() { openModal('promoModal'); });
 
     var closeBtns = document.querySelectorAll('.modal-close');
     for (var i = 0; i < closeBtns.length; i++) {
@@ -91,7 +94,7 @@ function closeModal(id) {
 
 /* ------------------------------- LOAD -------------------------------- */
 async function refreshAll() {
-    await Promise.all([loadBookings(), loadDrivers(), loadTrips(), loadAds(), loadSlots(), loadReviews()]);
+    await Promise.all([loadBookings(), loadDrivers(), loadTrips(), loadAds(), loadSlots(), loadPromos(), loadReviews()]);
     renderDashboardStats();
     renderRecentTables();
 }
@@ -136,6 +139,13 @@ async function loadSlots() {
     if (error) { showToast('Error loading time slots: ' + error.message, 'error'); return; }
     AdminState.slots = data || [];
     renderSlots();
+}
+
+async function loadPromos() {
+    var { data, error } = await supabaseClient.from('promo_codes').select('*').order('created_at', { ascending: false });
+    if (error) { showToast('Error loading promos: ' + error.message, 'error'); return; }
+    AdminState.promos = data || [];
+    renderPromos();
 }
 
 async function loadReviews() {
@@ -516,14 +526,51 @@ async function deleteAd(id) {
     await loadAds();
 }
 
-/* ----------------------------- PROMO CODES ------------------------------ */
-async function loadPromos() {
-    var { data, error } = await supabaseClient.from('promo_codes').select('*').order('created_at', { ascending: false });
-    if (error) { showToast('Error loading promos: ' + error.message, 'error'); return; }
-    AdminState.promos = data || [];
-    renderPromos();
+/* ----------------------------- TIME SLOTS ------------------------------ */
+function renderSlots() {
+    var html = '';
+    for (var i = 0; i < AdminState.slots.length; i++) {
+        var s = AdminState.slots[i];
+        html += '<tr>';
+        html += '<td>' + s.route.replace('-', ' → ') + '</td>';
+        html += '<td>' + s.departure_time + '</td>';
+        html += '<td><span class="badge ' + (s.is_active ? 'badge-active' : 'badge-inactive') + '">' + (s.is_active ? 'Active' : 'Inactive') + '</span></td>';
+        html += '<td class="table-actions"><button class="btn ' + (s.is_active ? 'btn-outline' : 'btn-navy') + ' btn-sm" data-toggle-slot="' + s.id + '" data-active="' + s.is_active + '" style="' + (s.is_active ? 'color:var(--primary); border-color:var(--primary);' : '') + '">' + (s.is_active ? 'Deactivate' : 'Activate') + '</button><button class="btn btn-danger btn-sm" data-delete-slot="' + s.id + '">Delete</button></td>';
+        html += '</tr>';
+    }
+    document.querySelector('#slotsTable tbody').innerHTML = html || '<tr><td colspan="4" style="text-align:center; color:var(--gray-600);">No time slots added yet. Add slots for each route and time.</td></tr>';
+
+    var toggleBtns = document.querySelectorAll('[data-toggle-slot]');
+    for (var t = 0; t < toggleBtns.length; t++) {
+        toggleBtns[t].addEventListener('click', function() {
+            toggleSlotActive(this.dataset.toggleSlot, this.dataset.active === 'true');
+        });
+    }
+    
+    var deleteBtns = document.querySelectorAll('[data-delete-slot]');
+    for (var d = 0; d < deleteBtns.length; d++) {
+        deleteBtns[d].addEventListener('click', function() {
+            deleteSlot(this.dataset.deleteSlot);
+        });
+    }
 }
 
+async function toggleSlotActive(id, isActive) {
+    var { error } = await supabaseClient.from('time_slots').update({ is_active: !isActive }).eq('id', id);
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast('Time slot ' + (!isActive ? 'activated' : 'deactivated') + '.', 'success');
+    await loadSlots();
+}
+
+async function deleteSlot(id) {
+    if (!confirm('Delete this time slot?')) return;
+    var { error } = await supabaseClient.from('time_slots').delete().eq('id', id);
+    if (error) { showToast(error.message, 'error'); return; }
+    showToast('Time slot deleted.', 'success');
+    await loadSlots();
+}
+
+/* ----------------------------- PROMO CODES ------------------------------ */
 function renderPromos() {
     var html = '';
     for (var i = 0; i < AdminState.promos.length; i++) {
@@ -546,17 +593,19 @@ function renderPromos() {
     }
     document.querySelector('#promosTable tbody').innerHTML = html || '<tr><td colspan="7" style="text-align:center; color:var(--gray-600);">No promo codes created yet.</td></tr>';
 
-    document.querySelectorAll('[data-toggle-promo]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+    var toggleBtns = document.querySelectorAll('[data-toggle-promo]');
+    for (var t = 0; t < toggleBtns.length; t++) {
+        toggleBtns[t].addEventListener('click', function() {
             togglePromoActive(this.dataset.togglePromo, this.dataset.active === 'true');
         });
-    });
+    }
     
-    document.querySelectorAll('[data-delete-promo]').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+    var deleteBtns = document.querySelectorAll('[data-delete-promo]');
+    for (var d = 0; d < deleteBtns.length; d++) {
+        deleteBtns[d].addEventListener('click', function() {
             deletePromo(this.dataset.deletePromo);
         });
-    });
+    }
 }
 
 async function togglePromoActive(id, isActive) {
@@ -574,35 +623,6 @@ async function deletePromo(id) {
     await loadPromos();
 }
 
-// Add to setupModals
-document.getElementById('addPromoBtn').addEventListener('click', function() { openModal('promoModal'); });
-
-// Add to setupForms
-document.getElementById('promoForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    var payload = {
-        code: document.getElementById('promoCode').value.trim().toUpperCase(),
-        description: document.getElementById('promoDescription').value.trim() || null,
-        discount_percent: parseFloat(document.getElementById('promoDiscount').value),
-        is_active: true,
-        max_uses: parseInt(document.getElementById('promoMaxUses').value) || 0,
-        expires_at: document.getElementById('promoExpires').value || null
-    };
-    var { error } = await supabaseClient.from('promo_codes').insert([payload]);
-    if (error) { showToast(error.message, 'error'); return; }
-    showToast('Promo code added successfully.', 'success');
-    closeModal('promoModal');
-    await loadPromos();
-});
-
-// Add to refreshAll
-await loadPromos();
-
-// Add to AdminState
-promos: []
-
-// Add to navigation titles
-promos: 'Promo Code Management'
 /* ------------------------------ REVIEWS ------------------------------ */
 function renderReviews() {
     var html = '';
@@ -662,50 +682,6 @@ async function deleteReview(id) {
     if (error) { showToast(error.message, 'error'); return; }
     showToast('Review deleted.', 'success');
     await loadReviews();
-}
-
-/* ----------------------------- TIME SLOTS ------------------------------ */
-function renderSlots() {
-    var html = '';
-    for (var i = 0; i < AdminState.slots.length; i++) {
-        var s = AdminState.slots[i];
-        html += '<tr>';
-        html += '<td>' + s.route.replace('-', ' → ') + '</td>';
-        html += '<td>' + s.departure_time + '</td>';
-        html += '<td><span class="badge ' + (s.is_active ? 'badge-active' : 'badge-inactive') + '">' + (s.is_active ? 'Active' : 'Inactive') + '</span></td>';
-        html += '<td class="table-actions"><button class="btn ' + (s.is_active ? 'btn-outline' : 'btn-navy') + ' btn-sm" data-toggle-slot="' + s.id + '" data-active="' + s.is_active + '" style="' + (s.is_active ? 'color:var(--primary); border-color:var(--primary);' : '') + '">' + (s.is_active ? 'Deactivate' : 'Activate') + '</button><button class="btn btn-danger btn-sm" data-delete-slot="' + s.id + '">Delete</button></td>';
-        html += '</tr>';
-    }
-    document.querySelector('#slotsTable tbody').innerHTML = html || '<tr><td colspan="4" style="text-align:center; color:var(--gray-600);">No time slots added yet. Add slots for each route and time.</td></tr>';
-
-    var toggleBtns = document.querySelectorAll('[data-toggle-slot]');
-    for (var t = 0; t < toggleBtns.length; t++) {
-        toggleBtns[t].addEventListener('click', function() {
-            toggleSlotActive(this.dataset.toggleSlot, this.dataset.active === 'true');
-        });
-    }
-    
-    var deleteBtns = document.querySelectorAll('[data-delete-slot]');
-    for (var d = 0; d < deleteBtns.length; d++) {
-        deleteBtns[d].addEventListener('click', function() {
-            deleteSlot(this.dataset.deleteSlot);
-        });
-    }
-}
-
-async function toggleSlotActive(id, isActive) {
-    var { error } = await supabaseClient.from('time_slots').update({ is_active: !isActive }).eq('id', id);
-    if (error) { showToast(error.message, 'error'); return; }
-    showToast('Time slot ' + (!isActive ? 'activated' : 'deactivated') + '.', 'success');
-    await loadSlots();
-}
-
-async function deleteSlot(id) {
-    if (!confirm('Delete this time slot?')) return;
-    var { error } = await supabaseClient.from('time_slots').delete().eq('id', id);
-    if (error) { showToast(error.message, 'error'); return; }
-    showToast('Time slot deleted.', 'success');
-    await loadSlots();
 }
 
 /* ------------------------------- FORMS --------------------------------- */
@@ -815,5 +791,22 @@ function setupForms() {
         showToast('Time slot added successfully.', 'success');
         closeModal('slotModal');
         await loadSlots();
+    });
+
+    document.getElementById('promoForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var payload = {
+            code: document.getElementById('promoCode').value.trim().toUpperCase(),
+            description: document.getElementById('promoDescription').value.trim() || null,
+            discount_percent: parseFloat(document.getElementById('promoDiscount').value),
+            is_active: true,
+            max_uses: parseInt(document.getElementById('promoMaxUses').value) || 0,
+            expires_at: document.getElementById('promoExpires').value || null
+        };
+        var { error } = await supabaseClient.from('promo_codes').insert([payload]);
+        if (error) { showToast(error.message, 'error'); return; }
+        showToast('Promo code added successfully.', 'success');
+        closeModal('promoModal');
+        await loadPromos();
     });
 }
