@@ -149,7 +149,39 @@
                 </div>
             </div>
         </section>
-
+<!-- PROMO CODES SECTION -->
+<section class="admin-section" id="section-promos">
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h3>Promo Codes</h3>
+            <button class="btn btn-primary btn-sm" id="addPromoBtn">+ Add Promo</button>
+        </div>
+        <p style="color:var(--gray-600); font-size:0.85rem; margin-bottom:14px;">
+            Create discount promo codes for customers to use during booking.
+        </p>
+        <div class="table-wrapper">
+            <table class="data-table" id="promosTable">
+                <thead><tr><th>Code</th><th>Description</th><th>Discount</th><th>Uses</th><th>Status</th><th>Expires</th><th>Actions</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</section>
+<!-- MODAL: ADD PROMO -->
+<div class="modal-overlay" id="promoModal">
+    <div class="modal-box">
+        <button class="modal-close" data-close="promoModal">&times;</button>
+        <h3>Add Promo Code</h3>
+        <form id="promoForm">
+            <div class="form-group"><label>Promo Code</label><input type="text" id="promoCode" required placeholder="e.g. SUMMER20"></div>
+            <div class="form-group"><label>Description</label><input type="text" id="promoDescription" placeholder="e.g. 20% off summer special"></div>
+            <div class="form-group"><label>Discount Percentage</label><input type="number" id="promoDiscount" min="1" max="100" required placeholder="10"></div>
+            <div class="form-group"><label>Max Uses</label><input type="number" id="promoMaxUses" min="1" placeholder="100"></div>
+            <div class="form-group"><label>Expiry Date (optional)</label><input type="datetime-local" id="promoExpires"></div>
+            <button type="submit" class="btn btn-primary btn-block">Save Promo</button>
+        </form>
+    </div>
+</div>        
         <!-- REVIEWS SECTION -->
         <section class="admin-section" id="section-reviews">
             <div class="admin-card">
