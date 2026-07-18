@@ -106,7 +106,7 @@
         btn.textContent = 'Creating account...';
 
         try {
-            // Register with auto-confirm (email confirmation disabled in Supabase)
+            // Register with Supabase Auth
             var { data, error } = await supabaseClient.auth.signUp({
                 email: email,
                 password: password,
@@ -114,16 +114,13 @@
                     data: { 
                         full_name: fullName, 
                         phone: phone 
-                    },
-                    // This ensures the user is auto-confirmed if email confirmation is disabled
+                    }
                 }
             });
 
             if (error) throw error;
 
-            // Check if user was created successfully
             if (data && data.user) {
-                // The trigger will create the profile in users table
                 showToast('Account created successfully! You can now log in.', 'success');
                 setTimeout(function() {
                     window.location.href = 'login.html';
@@ -132,6 +129,7 @@
                 throw new Error('Could not create account. Please try again.');
             }
         } catch (err) {
+            console.error('Registration error:', err);
             showToast(err.message || 'Registration failed. Please try again.', 'error');
             btn.disabled = false;
             btn.textContent = 'Create Account';
