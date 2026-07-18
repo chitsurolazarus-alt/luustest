@@ -9,14 +9,22 @@ var AuthManager = {
         var { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password,
-            options: { data: { full_name: fullName, phone: phone } }
+            options: { 
+                data: { 
+                    full_name: fullName, 
+                    phone: phone 
+                }
+            }
         });
         if (error) throw error;
         return data;
     },
 
     login: async function({ email, password }) {
-        var { data, error } = await supabaseClient.auth.signInWithPassword({ email: email, password: password });
+        var { data, error } = await supabaseClient.auth.signInWithPassword({ 
+            email: email, 
+            password: password 
+        });
         if (error) throw error;
 
         var profile = await this.getProfile(data.user.id);
