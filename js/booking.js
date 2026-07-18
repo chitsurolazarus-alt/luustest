@@ -154,7 +154,7 @@ function setupBookingTypeButtons() {
 }
 
 /* =====================================================================
-   PROMO CODE HANDLER - FIXED
+   PROMO CODE HANDLER - FIXED with maybeSingle
    ===================================================================== */
 function setupPromoHandler() {
     document.getElementById('applyPromoBtn').onclick = async function() {
@@ -164,7 +164,6 @@ function setupPromoHandler() {
             return;
         }
 
-        // Use maybeSingle() instead of single() to avoid the error
         var { data, error } = await supabaseClient
             .from('promo_codes')
             .select('*')
@@ -187,7 +186,6 @@ function setupPromoHandler() {
             return;
         }
 
-        // Check if user has already used this promo
         var { data: usedCheck, error: usedError } = await supabaseClient
             .from('bookings')
             .select('id')
@@ -506,7 +504,6 @@ function setupUIHandlers() {
    WHATSAPP REDIRECT HELPER - WORKS ON MOBILE
    ===================================================================== */
 function redirectToWhatsApp(url) {
-    // Try opening in same window first (works best on mobile)
     window.location.href = url;
 }
 
@@ -517,11 +514,16 @@ async function initiatePaystackPayment() {
     if (!validateBooking()) return;
 
     var user = BookingState.currentUser;
-    var { data: profile } = await supabaseClient
+    var { data: profile, error: profileError } = await supabaseClient
         .from('users')
         .select('full_name, phone, email')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
+
+    if (profileError || !profile) {
+        showToast('Could not find user profile.', 'error');
+        return;
+    }
 
     var basePrice = BookingState.distance * APP_CONFIG.pricePerKm * BookingState.seats;
     var discount = BookingState.promoDiscount / 100 * basePrice;
@@ -557,17 +559,17 @@ async function initiatePaystackPayment() {
 async function handlePaymentSuccess(response, totalAmount) {
     try {
         var user = BookingState.currentUser;
-        var { data: profile } = await supabaseClient
+        var { data: profile, error: profileError } = await supabaseClient
             .from('users')
             .select('full_name, phone, email')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
-        var { data: slotData } = await supabaseClient
+        var { data: slotData, error: slotError } = await supabaseClient
             .from('time_slots')
             .select('route, departure_time')
             .eq('id', BookingState.selectedTime)
-            .single();
+            .maybeSingle();
 
         var date = document.getElementById('tripDate').value;
         var formattedDate = new Date(date).toLocaleDateString('en-ZA', { 
@@ -643,17 +645,17 @@ async function confirmBookingViaWhatsApp() {
     if (!validateBooking()) return;
 
     var user = BookingState.currentUser;
-    var { data: profile } = await supabaseClient
+    var { data: profile, error: profileError } = await supabaseClient
         .from('users')
         .select('full_name, phone, email')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
-    var { data: slotData } = await supabaseClient
+    var { data: slotData, error: slotError } = await supabaseClient
         .from('time_slots')
         .select('route, departure_time')
         .eq('id', BookingState.selectedTime)
-        .single();
+        .maybeSingle();
 
     var date = document.getElementById('tripDate').value;
     var formattedDate = new Date(date).toLocaleDateString('en-ZA', { 
@@ -688,8 +690,6 @@ async function confirmBookingViaWhatsApp() {
         }]).select();
 
         if (error) throw error;
-
-        var booking = bookingData ? bookingData[0] : null;
 
         var message = '';
         if (BookingState.bookingType === 'quote') {
