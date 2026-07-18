@@ -27,7 +27,33 @@ var AuthManager = {
         });
         if (error) throw error;
 
-        var profile = await this.getProfile(data.user.id);
+        // Get profile from users table
+        var { data: profile, error: profileError } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('id', data.user.id)
+            .maybeSingle();
+
+        // If profile doesn't exist, create it
+        if (!profile && !profileError) {
+            var { data: newProfile, error: insertError } = await supabaseClient
+                .from('users')
+                .insert([{
+                    id: data.user.id,
+                    email: data.user.email,
+                    full_name: data.user.user_metadata?.full_name || 'New User',
+                    phone: data.user.user_metadata?.phone || '',
+                    role: 'customer'
+                }])
+                .select()
+                .maybeSingle();
+            
+            if (!insertError && newProfile) {
+                return { session: data.session, user: data.user, profile: newProfile };
+            }
+        }
+
+        if (profileError) throw profileError;
         return { session: data.session, user: data.user, profile: profile };
     },
 
@@ -48,7 +74,7 @@ var AuthManager = {
             .from('users')
             .select('*')
             .eq('id', userId)
-            .single();
+            .maybeSingle();
         if (error) throw error;
         return data;
     },
@@ -76,7 +102,7 @@ var AuthManager = {
             return null;
         }
         var profile = await this.getProfile(user.id);
-        if (profile.role !== 'admin') {
+        if (!profile || profile.role !== 'admin') {
             window.location.href = redirectTo;
             return null;
         }
@@ -91,7 +117,7 @@ var AuthManager = {
             return null;
         }
         var profile = await this.getProfile(user.id);
-        if (profile.role !== 'driver') {
+        if (!profile || profile.role !== 'driver') {
             window.location.href = redirectTo;
             return null;
         }
