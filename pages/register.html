@@ -59,28 +59,32 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script>
-    const passwordInput = document.getElementById('password');
-    const strengthBar = document.getElementById('strengthBar');
-    const strengthLabel = document.getElementById('strengthLabel');
+    var passwordInput = document.getElementById('password');
+    var strengthBar = document.getElementById('strengthBar');
+    var strengthLabel = document.getElementById('strengthLabel');
 
-    passwordInput.addEventListener('input', () => {
-        const val = passwordInput.value;
-        if (!val) { strengthBar.className = 'password-strength-bar'; strengthLabel.textContent = ''; return; }
-        const { label, className } = passwordStrength(val);
-        strengthBar.className = `password-strength-bar ${className}`;
-        strengthLabel.textContent = `Password strength: ${label}`;
+    passwordInput.addEventListener('input', function() {
+        var val = passwordInput.value;
+        if (!val) { 
+            strengthBar.className = 'password-strength-bar'; 
+            strengthLabel.textContent = ''; 
+            return; 
+        }
+        var result = passwordStrength(val);
+        strengthBar.className = 'password-strength-bar ' + result.className;
+        strengthLabel.textContent = 'Password strength: ' + result.label;
     });
 
-    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    document.getElementById('registerForm').addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const fullName = document.getElementById('fullName').value.trim();
-        const email = document.getElementById('email').value.trim();
-        const phone = document.getElementById('phone').value.trim();
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('confirmPassword').value;
-        const phoneError = document.getElementById('phoneError');
-        const matchError = document.getElementById('matchError');
+        var fullName = document.getElementById('fullName').value.trim();
+        var email = document.getElementById('email').value.trim();
+        var phone = document.getElementById('phone').value.trim();
+        var password = document.getElementById('password').value;
+        var confirmPassword = document.getElementById('confirmPassword').value;
+        var phoneError = document.getElementById('phoneError');
+        var matchError = document.getElementById('matchError');
         phoneError.classList.remove('show');
         matchError.classList.remove('show');
 
@@ -97,14 +101,36 @@
             return;
         }
 
-        const btn = document.getElementById('registerBtn');
+        var btn = document.getElementById('registerBtn');
         btn.disabled = true;
         btn.textContent = 'Creating account...';
 
         try {
-            await AuthManager.register({ fullName, email, phone, password });
-            showToast('Account created! Please check your email to confirm, then log in.', 'success');
-            setTimeout(() => window.location.href = 'login.html', 2000);
+            // Register with auto-confirm (email confirmation disabled in Supabase)
+            var { data, error } = await supabaseClient.auth.signUp({
+                email: email,
+                password: password,
+                options: { 
+                    data: { 
+                        full_name: fullName, 
+                        phone: phone 
+                    },
+                    // This ensures the user is auto-confirmed if email confirmation is disabled
+                }
+            });
+
+            if (error) throw error;
+
+            // Check if user was created successfully
+            if (data && data.user) {
+                // The trigger will create the profile in users table
+                showToast('Account created successfully! You can now log in.', 'success');
+                setTimeout(function() {
+                    window.location.href = 'login.html';
+                }, 1500);
+            } else {
+                throw new Error('Could not create account. Please try again.');
+            }
         } catch (err) {
             showToast(err.message || 'Registration failed. Please try again.', 'error');
             btn.disabled = false;
