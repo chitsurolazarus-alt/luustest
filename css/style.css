@@ -275,7 +275,67 @@ img { max-width: 100%; display: block; }
     display: flex; align-items: center; justify-content: center;
     font-family: var(--font-display); font-weight: 700;
 }
+/* =====================================================================
+   LARGER ADS BANNER STYLES
+   ===================================================================== */
 
+.ads-banner-large {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.ad-card-large {
+    background: var(--secondary);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 30px 35px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border-left: 6px solid var(--accent);
+}
+
+.ad-card-large:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(17, 28, 90, 0.15);
+}
+
+.ad-card-large h4 {
+    font-size: 1.3rem;
+    color: var(--primary);
+    margin-bottom: 8px;
+}
+
+.ad-card-large p {
+    color: var(--gray-600);
+    font-size: 1.05rem;
+    line-height: 1.6;
+}
+
+.ad-card-large img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .ad-card-large {
+        padding: 20px;
+    }
+    .ad-card-large h4 {
+        font-size: 1.1rem;
+    }
+    .ad-card-large p {
+        font-size: 0.95rem;
+    }
+    .ad-card-large img {
+        width: 80px;
+        height: 80px;
+    }
+}
 /* Ads banner */
 .ads-banner { display: grid; gap: 16px; }
 .ad-card {
