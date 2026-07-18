@@ -57,20 +57,90 @@
         btn.textContent = 'Logging in...';
 
         try {
-            var { profile } = await AuthManager.login({ email: email, password: password });
-            showToast('Login successful!', 'success');
-            
-            if (profile.role === 'admin') {
-                setTimeout(function() {
-                    window.location.href = 'admin-dashboard.html';
-                }, 800);
-            } else {
-                setTimeout(function() {
-                    window.location.href = 'booking.html';
-                }, 800);
+            // Direct Supabase login with better error handling
+            var { data, error } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                console.error('Login error:', error);
+                if (error.message.includes('Email not confirmed')) {
+                    showToast('Please confirm your email address before logging in.', 'error');
+                } else if (error.message.includes('Invalid login credentials')) {
+                    showToast('Invalid email or password. Please try again.', 'error');
+                } else {
+                    showToast(error.message || 'Login failed. Please try again.', 'error');
+                }
+                btn.disabled = false;
+                btn.textContent = 'Log In';
+                return;
             }
+
+            if (!data || !data.user) {
+                showToast('Login failed. Please try again.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Log In';
+                return;
+            }
+
+            // Get user profile from users table
+            var { data: profile, error: profileError } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('id', data.user.id)
+                .maybeSingle();
+
+            if (profileError) {
+                console.error('Profile error:', profileError);
+                // Try to create profile if it doesn't exist
+                var { error: insertError } = await supabaseClient
+                    .from('users')
+                    .insert([{
+                        id: data.user.id,
+                        email: data.user.email,
+                        full_name: data.user.user_metadata?.full_name || 'New User',
+                        phone: data.user.user_metadata?.phone || '',
+                        role: 'customer'
+                    }]);
+                
+                if (insertError) {
+                    console.error('Could not create profile:', insertError);
+                }
+                
+                // Try fetching again
+                var { data: newProfile } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .maybeSingle();
+                
+                if (newProfile) {
+                    showToast('Login successful!', 'success');
+                    if (newProfile.role === 'admin') {
+                        setTimeout(function() { window.location.href = 'admin-dashboard.html'; }, 500);
+                    } else {
+                        setTimeout(function() { window.location.href = 'booking.html'; }, 500);
+                    }
+                    return;
+                }
+            }
+
+            if (profile) {
+                showToast('Login successful!', 'success');
+                if (profile.role === 'admin') {
+                    setTimeout(function() { window.location.href = 'admin-dashboard.html'; }, 500);
+                } else {
+                    setTimeout(function() { window.location.href = 'booking.html'; }, 500);
+                }
+            } else {
+                showToast('Login successful!', 'success');
+                setTimeout(function() { window.location.href = 'booking.html'; }, 500);
+            }
+
         } catch (err) {
-            showToast(err.message || 'Login failed. Check your details and try again.', 'error');
+            console.error('Login error:', err);
+            showToast(err.message || 'Login failed. Please try again.', 'error');
             btn.disabled = false;
             btn.textContent = 'Log In';
         }
