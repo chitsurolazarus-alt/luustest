@@ -23,7 +23,73 @@ document.addEventListener('DOMContentLoaded', function() {
     redirectIfLoggedIn();
 });
 
-// Replace the static testimonials with real, admin-approved customer reviews.
+// Load active ads with larger display
+async function loadActiveAds() {
+    try {
+        var { data, error } = await supabaseClient
+            .from('ads')
+            .select('*')
+            .eq('is_active', true)
+            .order('display_order', { ascending: true });
+
+        if (error || !data || data.length === 0) {
+            // Show default ads if none in database
+            showDefaultAds();
+            return;
+        }
+
+        var banner = document.getElementById('adsBanner');
+        if (!banner) return;
+        
+        var html = '';
+        for (var i = 0; i < data.length; i++) {
+            var ad = data[i];
+            var borderColor = i % 2 === 0 ? 'var(--accent)' : 'var(--success)';
+            html += '<div class="ad-card-large" style="background:var(--secondary); border-radius:var(--radius); box-shadow:var(--shadow); padding:30px; margin-bottom:20px; border-left:6px solid ' + borderColor + ';">';
+            html += '<div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">';
+            if (ad.image_url) {
+                html += '<img src="' + ad.image_url + '" alt="' + ad.title + '" style="width:120px; height:120px; object-fit:cover; border-radius:12px; flex-shrink:0;">';
+            }
+            html += '<div style="flex:1;">';
+            html += '<h4 style="font-size:1.3rem; color:var(--primary); margin-bottom:8px;">' + ad.title + '</h4>';
+            html += '<p style="color:var(--gray-600); font-size:1.05rem; line-height:1.6;">' + ad.content + '</p>';
+            html += '</div></div></div>';
+        }
+        
+        banner.innerHTML = html;
+        document.getElementById('ads-section').style.display = 'block';
+    } catch (err) {
+        console.error('Could not load ads:', err);
+        showDefaultAds();
+    }
+}
+
+function showDefaultAds() {
+    var banner = document.getElementById('adsBanner');
+    if (!banner) return;
+    
+    banner.innerHTML = `
+        <div class="ad-card-large" style="background:var(--secondary); border-radius:var(--radius); box-shadow:var(--shadow); padding:30px; margin-bottom:20px; border-left:6px solid var(--accent);">
+            <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1;">
+                    <h4 style="font-size:1.3rem; color:var(--primary); margin-bottom:8px;">🚐 Welcome to Luu Travels!</h4>
+                    <p style="color:var(--gray-600); font-size:1.05rem; line-height:1.6;">Safe and reliable shuttle transport between Gauteng and Limpopo. Book your trip today!</p>
+                </div>
+            </div>
+        </div>
+        <div class="ad-card-large" style="background:var(--secondary); border-radius:var(--radius); box-shadow:var(--shadow); padding:30px; margin-bottom:20px; border-left:6px solid var(--success);">
+            <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
+                <div style="flex:1;">
+                    <h4 style="font-size:1.3rem; color:var(--primary); margin-bottom:8px;">🎉 Special Offer</h4>
+                    <p style="color:var(--gray-600); font-size:1.05rem; line-height:1.6;">Book your trip now and get 10% off with code <strong style="color:var(--accent-dark);">WELCOME10</strong></p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('ads-section').style.display = 'block';
+}
+
+// Load approved reviews with full customer names
 async function loadApprovedReviews() {
     try {
         var { data, error } = await supabaseClient
@@ -57,40 +123,7 @@ async function loadApprovedReviews() {
     }
 }
 
-// Show active ads (admins can post these anywhere; landing page shows them near the top)
-async function loadActiveAds() {
-    try {
-        var { data, error } = await supabaseClient
-            .from('ads')
-            .select('*')
-            .eq('is_active', true)
-            .order('display_order', { ascending: true });
-
-        if (error || !data || data.length === 0) return;
-
-        var section = document.getElementById('ads-section');
-        var banner = document.getElementById('adsBanner');
-        var html = '';
-        
-        for (var i = 0; i < data.length; i++) {
-            var ad = data[i];
-            html += '<div class="ad-card">';
-            if (ad.image_url) {
-                html += '<img src="' + ad.image_url + '" alt="' + ad.title + '">';
-            }
-            html += '<div><h4>' + ad.title + '</h4><p>' + ad.content + '</p></div>';
-            html += '</div>';
-        }
-        
-        banner.innerHTML = html;
-        section.style.display = 'block';
-    } catch (err) {
-        console.error('Could not load ads:', err);
-    }
-}
-
-// If a logged-in user lands on index.html, don't force redirect (they may just be browsing),
-// but if they click Login/Register while already authenticated, send them straight in.
+// If a logged-in user lands on index.html
 async function redirectIfLoggedIn() {
     try {
         var { data: { session } } = await supabaseClient.auth.getSession();
