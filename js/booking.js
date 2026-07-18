@@ -154,7 +154,7 @@ function setupBookingTypeButtons() {
 }
 
 /* =====================================================================
-   PROMO CODE HANDLER
+   PROMO CODE HANDLER - FIXED
    ===================================================================== */
 function setupPromoHandler() {
     document.getElementById('applyPromoBtn').onclick = async function() {
@@ -164,14 +164,20 @@ function setupPromoHandler() {
             return;
         }
 
+        // Use maybeSingle() instead of single() to avoid the error
         var { data, error } = await supabaseClient
             .from('promo_codes')
             .select('*')
             .eq('code', code)
             .eq('is_active', true)
-            .single();
+            .maybeSingle();
 
-        if (error || !data) {
+        if (error) {
+            document.getElementById('promoMessage').innerHTML = '<span style="color:var(--danger);">❌ Error checking promo code.</span>';
+            return;
+        }
+
+        if (!data) {
             document.getElementById('promoMessage').innerHTML = '<span style="color:var(--danger);">❌ Invalid or expired promo code.</span>';
             return;
         }
@@ -181,7 +187,8 @@ function setupPromoHandler() {
             return;
         }
 
-        var { data: usedCheck } = await supabaseClient
+        // Check if user has already used this promo
+        var { data: usedCheck, error: usedError } = await supabaseClient
             .from('bookings')
             .select('id')
             .eq('user_id', BookingState.currentUser.id)
@@ -501,11 +508,6 @@ function setupUIHandlers() {
 function redirectToWhatsApp(url) {
     // Try opening in same window first (works best on mobile)
     window.location.href = url;
-    
-    // Also try opening in new window as fallback for desktop
-    setTimeout(function() {
-        window.open(url, '_blank');
-    }, 100);
 }
 
 /* =====================================================================
