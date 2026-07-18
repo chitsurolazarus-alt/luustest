@@ -16,7 +16,7 @@ var APP_CONFIG = {
     whatsappNumber: '27768457061',
     email: 'LuuTravels611@gmail.com',
     address: 'Windmill Park Ext 32, Boksburg, Gauteng, South Africa',
-    pricePerKm: 2.00,
+    pricePerKm: 2.20,
     maxSeats: 9,
     routes: ['Gauteng-Limpopo', 'Limpopo-Gauteng'],
     currency: 'R',
