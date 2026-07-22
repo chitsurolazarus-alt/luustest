@@ -6,103 +6,47 @@
 <title>Book a Trip | Luu Travels & Logistics</title>
 <link rel="icon" type="image/png" href="../assets/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Leaflet CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<!-- Leaflet Control Geocoder CSS -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+<!-- MapLibre GL CSS -->
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
 <link rel="stylesheet" href="../css/style.css">
 <link rel="stylesheet" href="../css/booking.css">
 <!-- Paystack Script -->
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <style>
-    .leaflet-control-geocoder {
-        width: 100% !important;
-        max-width: 100% !important;
-        border-radius: 8px !important;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important;
-    }
-    .leaflet-control-geocoder-form {
-        display: flex !important;
-        width: 100% !important;
-    }
-    .leaflet-control-geocoder-form input {
-        flex: 1 !important;
-        padding: 10px 14px !important;
-        border: 1.5px solid var(--gray-200) !important;
-        border-radius: 8px 0 0 8px !important;
-        font-size: 0.95rem !important;
-        font-family: inherit !important;
-        min-height: 44px !important;
-    }
-    .leaflet-control-geocoder-form input:focus {
-        outline: none !important;
-        border-color: var(--accent) !important;
-    }
-    .leaflet-control-geocoder-form button {
-        padding: 10px 16px !important;
-        background: var(--primary) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 0 8px 8px 0 !important;
-        cursor: pointer !important;
-        font-weight: 600 !important;
-        min-height: 44px !important;
-    }
-    .leaflet-control-geocoder-form button:hover {
-        background: var(--primary-light) !important;
-    }
-    .leaflet-control-geocoder-results {
-        position: absolute !important;
-        top: 100% !important;
-        left: 0 !important;
-        right: 0 !important;
-        background: white !important;
-        border-radius: 0 0 8px 8px !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
-        max-height: 250px !important;
-        overflow-y: auto !important;
-        z-index: 1000 !important;
-        margin-top: 2px !important;
-    }
-    .leaflet-control-geocoder-results a {
-        display: block !important;
-        padding: 10px 14px !important;
-        color: var(--dark-text) !important;
-        text-decoration: none !important;
-        font-size: 0.9rem !important;
-        border-bottom: 1px solid var(--gray-200) !important;
-        cursor: pointer !important;
-    }
-    .leaflet-control-geocoder-results a:hover {
-        background: var(--gray-100) !important;
-    }
-    .leaflet-control-geocoder-results a:last-child {
-        border-bottom: none !important;
-    }
-    .leaflet-control-geocoder-results .leaflet-control-geocoder-no-results {
-        padding: 10px 14px !important;
-        color: var(--gray-600) !important;
-    }
     .address-search-row {
         position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
     }
-    .address-search-row .leaflet-control-geocoder {
-        position: static !important;
+    .address-search-row input {
+        flex: 1;
+        padding: 12px 14px 12px 40px;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: var(--secondary);
+        min-height: 48px;
+        width: 100%;
     }
-    .address-search-row .leaflet-control-geocoder-form input {
-        padding-left: 40px !important;
+    .address-search-row input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
     }
     .address-dot {
         position: absolute;
-        left: 14px;
+        left: 12px;
         top: 50%;
         transform: translateY(-50%);
         z-index: 10;
-        width: 12px;
-        height: 12px;
+        width: 14px;
+        height: 14px;
         border-radius: 50%;
         border: 2px solid white;
         box-shadow: 0 0 0 2px var(--gray-300);
+        flex-shrink: 0;
     }
     .address-dot-green {
         background: var(--success);
@@ -110,56 +54,146 @@
     .address-dot-red {
         background: var(--danger);
     }
+    .address-search-row .btn {
+        flex-shrink: 0;
+        min-height: 48px;
+        padding: 0 20px;
+    }
     #booking-map {
-        height: 400px;
+        height: 420px;
         width: 100%;
         border-radius: 8px;
         overflow: hidden;
     }
+    #booking-map .maplibregl-map {
+        border-radius: 8px;
+    }
     .map-panel {
         position: relative;
     }
+    /* Autocomplete dropdown */
+    .autocomplete-results {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 48px;
+        background: white;
+        border-radius: 0 0 8px 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        max-height: 250px;
+        overflow-y: auto;
+        z-index: 1000;
+        margin-top: 2px;
+        border: 1px solid var(--gray-200);
+        border-top: none;
+        display: none;
+    }
+    .autocomplete-results.active {
+        display: block;
+    }
+    .autocomplete-item {
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--gray-100);
+        font-size: 0.9rem;
+        transition: background 0.15s ease;
+    }
+    .autocomplete-item:hover {
+        background: var(--gray-100);
+    }
+    .autocomplete-item:last-child {
+        border-bottom: none;
+    }
+    .autocomplete-item .main-text {
+        font-weight: 500;
+        color: var(--dark-text);
+    }
+    .autocomplete-item .sub-text {
+        font-size: 0.8rem;
+        color: var(--gray-600);
+        display: block;
+        margin-top: 2px;
+    }
+    .autocomplete-item .highlight {
+        color: var(--accent-dark);
+        font-weight: 700;
+    }
+    .searching-indicator {
+        padding: 12px 16px;
+        color: var(--gray-600);
+        font-size: 0.9rem;
+        text-align: center;
+    }
+    .location-btn {
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 16px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 0.85rem;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        transition: background 0.2s ease;
+    }
+    .location-btn:hover {
+        background: var(--primary-light);
+    }
+    .map-controls {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    .map-controls .btn {
+        flex: 1;
+        min-height: 44px;
+    }
+    /* Custom markers */
+    .custom-marker {
+        width: 30px;
+        height: 30px;
+        border-radius: 50% 50% 50% 0;
+        border: 3px solid white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 11px;
+        color: white;
+        transform: rotate(-45deg);
+        cursor: pointer;
+    }
     .custom-marker-pickup {
         background: var(--success);
-        border: 3px solid white;
-        border-radius: 50% 50% 50% 0;
-        width: 24px;
-        height: 24px;
-        transform: rotate(-45deg);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    }
-    .custom-marker-pickup::after {
-        content: 'P';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(45deg);
-        color: white;
-        font-weight: bold;
-        font-size: 10px;
     }
     .custom-marker-dropoff {
         background: var(--danger);
-        border: 3px solid white;
-        border-radius: 50% 50% 50% 0;
-        width: 24px;
-        height: 24px;
-        transform: rotate(-45deg);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    .custom-marker-dropoff::after {
-        content: 'D';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) rotate(45deg);
-        color: white;
-        font-weight: bold;
-        font-size: 10px;
+    .custom-marker span {
+        transform: rotate(45deg);
     }
-    .leaflet-div-icon {
-        background: transparent !important;
-        border: none !important;
+    @media (max-width: 768px) {
+        .address-search-row {
+            flex-wrap: wrap;
+        }
+        .address-search-row input {
+            min-height: 44px;
+            font-size: 0.9rem;
+        }
+        .address-search-row .btn {
+            min-height: 44px;
+            font-size: 0.85rem;
+            padding: 0 14px;
+        }
+        #booking-map {
+            height: 300px;
+        }
     }
 </style>
 </head>
@@ -211,19 +245,27 @@
             <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary);" id="clearMapBtn">Clear All</button>
         </div>
         
-        <!-- Address inputs with Leaflet Geocoder -->
+        <!-- Address inputs with autocomplete -->
         <div class="address-search">
-            <div class="address-search-row" style="position:relative; margin-bottom:10px;">
+            <div class="address-search-row">
                 <span class="address-dot address-dot-green"></span>
-                <div id="pickupGeocoder" style="flex:1;"></div>
+                <input type="text" id="pickupSearch" placeholder="Type pickup address (e.g. Boksburg, Gauteng)" autocomplete="off">
+                <button class="btn btn-navy btn-sm" id="pickupFindBtn">Find</button>
             </div>
-            <div class="address-search-row" style="position:relative;">
+            <div id="pickupAutocomplete" class="autocomplete-results"></div>
+            
+            <div class="address-search-row">
                 <span class="address-dot address-dot-red"></span>
-                <div id="dropoffGeocoder" style="flex:1;"></div>
+                <input type="text" id="dropoffSearch" placeholder="Type drop-off address (e.g. Polokwane, Limpopo)" autocomplete="off">
+                <button class="btn btn-navy btn-sm" id="dropoffFindBtn">Find</button>
             </div>
-            <button class="btn btn-navy btn-sm" id="useCurrentLocationBtn" style="margin-top:10px; width:100%;">
-                📍 Use My Current Location
-            </button>
+            <div id="dropoffAutocomplete" class="autocomplete-results"></div>
+            
+            <div class="map-controls">
+                <button class="location-btn" id="useCurrentLocationBtn">
+                    📍 Use My Current Location
+                </button>
+            </div>
         </div>
         
         <!-- Map -->
@@ -240,7 +282,7 @@
             </div>
         </div>
         <p style="padding:0 20px 16px; font-size:0.82rem; color:var(--gray-600);">
-            Start typing your address and select from the suggestions. 
+            Start typing an address and select from suggestions, or click the <strong>Find</strong> button.
             <strong style="color:var(--success);">Green</strong> is pickup, 
             <strong style="color:var(--danger);">red</strong> is drop-off.
             Click on the map to set locations directly.
@@ -372,10 +414,8 @@
     </div>
 </footer>
 
-<!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Leaflet Control Geocoder -->
-<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+<!-- MapLibre GL JS -->
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
