@@ -22,13 +22,28 @@ var BookingState = {
     pickupMarker: null,
     dropoffMarker: null,
     routeLine: null,
+    routeSourceId: null,
+    routeLayerId: null,
     pickupAutocompleteTimeout: null,
     dropoffAutocompleteTimeout: null,
-    geocoderAbortController: null
+    isGeocoding: false
 };
 
 var WHATSAPP_NUMBER = '27768457061';
-var NOMINATIM_URL = 'https://nominatim.openstreetmap.org';
+
+// Multiple geocoding providers for better South Africa coverage
+var GEOCODING_PROVIDERS = [
+    {
+        name: 'Nominatim',
+        url: 'https://nominatim.openstreetmap.org/search?format=json&q=',
+        params: '&countrycodes=za&limit=8&addressdetails=1&bounded=1&viewbox=16.5,-33.5,33.5,-22.5'
+    },
+    {
+        name: 'Photon',
+        url: 'https://photon.komoot.io/api/?q=',
+        params: '&limit=8&lang=en&osm_tag=place&osm_tag=city&osm_tag=town&osm_tag=village&osm_tag=suburb&osm_tag=hamlet&osm_tag=neighbourhood&osm_tag=locality&bbox=16.5,-33.5,33.5,-22.5'
+    }
+];
 
 document.addEventListener('DOMContentLoaded', async function() {
     var user = await AuthManager.requireAuth('login.html');
@@ -121,10 +136,10 @@ function setupMobileMenu() {
 }
 
 /* =====================================================================
-   MAP INITIALIZATION - MapLibre GL
+   MAP INITIALIZATION - MapLibre GL with better tiles
    ===================================================================== */
 function initMap() {
-    // Free tile source that works in South Africa
+    // Use OpenStreetMap tiles with better South Africa coverage
     var map = new maplibregl.Map({
         container: 'booking-map',
         style: {
@@ -132,7 +147,12 @@ function initMap() {
             sources: {
                 osm: {
                     type: 'raster',
-                    tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                    tiles: [
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'https://b.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        'https://c.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                    ],
                     tileSize: 256,
                     attribution: '© OpenStreetMap Contributors'
                 }
@@ -145,7 +165,8 @@ function initMap() {
         },
         center: [28.0473, -26.2041],
         zoom: 7,
-        attributionControl: true
+        attributionControl: true,
+        maxZoom: 19
     });
 
     BookingState.map = map;
@@ -221,7 +242,7 @@ function initMap() {
 }
 
 /* =====================================================================
-   ADDRESS AUTOCOMPLETE WITH PREDICTION
+   IMPROVED ADDRESS AUTOCOMPLETE WITH MULTIPLE PROVIDERS
    ===================================================================== */
 function setupAutocomplete(type) {
     var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
@@ -241,8 +262,8 @@ function setupAutocomplete(type) {
         }
 
         BookingState[timeoutKey] = setTimeout(function() {
-            searchAddress(query, type);
-        }, 300);
+            searchAddressImproved(query, type);
+        }, 400);
     });
 
     // Close dropdown when clicking outside
@@ -253,7 +274,7 @@ function setupAutocomplete(type) {
     });
 }
 
-function searchAddress(query, type) {
+function searchAddressImproved(query, type) {
     var resultsId = type === 'pickup' ? 'pickupAutocomplete' : 'dropoffAutocomplete';
     var resultsContainer = document.getElementById(resultsId);
     var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
@@ -263,75 +284,171 @@ function searchAddress(query, type) {
     resultsContainer.innerHTML = '<div class="searching-indicator">🔍 Searching...</div>';
     resultsContainer.classList.add('active');
 
-    // Use Nominatim with South Africa bias
-    var url = NOMINATIM_URL + '/search?format=json&q=' + encodeURIComponent(query + ', South Africa') + '&countrycodes=za&limit=8&addressdetails=1&bounded=1&viewbox=16.5,-33.5,33.5,-22.5';
+    // Try multiple providers
+    var providers = GEOCODING_PROVIDERS;
+    var results = [];
+    var completedRequests = 0;
+    var totalRequests = providers.length;
 
-    fetch(url)
-        .then(function(response) { return response.json(); })
-        .then(function(data) {
-            if (!data || data.length === 0) {
-                resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different address.</div>';
-                return;
-            }
+    for (var p = 0; p < providers.length; p++) {
+        var provider = providers[p];
+        var url = provider.url + encodeURIComponent(query + ', South Africa') + provider.params;
 
-            var html = '';
-            for (var i = 0; i < data.length; i++) {
-                var result = data[i];
-                var displayName = result.display_name;
-                // Highlight the matched part
-                var mainText = result.name || displayName.split(',')[0] || 'Unknown';
-                var subText = displayName.replace(mainText, '').trim().replace(/^,/, '').trim() || 'South Africa';
+        fetch(url)
+            .then(function(response) { 
+                if (!response.ok) throw new Error('Network error');
+                return response.json(); 
+            })
+            .then(function(data) {
+                completedRequests++;
+                if (data && data.length > 0) {
+                    // Process results
+                    var processed = processGeocodeResults(data, provider.name);
+                    results = results.concat(processed);
+                }
                 
-                // Add type indicator
-                var typeLabel = '';
-                if (result.type === 'city') typeLabel = '🏙️';
-                else if (result.type === 'town') typeLabel = '🏘️';
-                else if (result.type === 'village') typeLabel = '🏘️';
-                else if (result.type === 'suburb') typeLabel = '🏠';
-                else if (result.type === 'road') typeLabel = '🛣️';
-                else if (result.type === 'house') typeLabel = '🏠';
-                else if (result.type === 'building') typeLabel = '🏢';
-                else typeLabel = '📍';
+                // If this is the last request or we have enough results, render
+                if (completedRequests >= totalRequests || results.length >= 10) {
+                    renderAutocompleteResults(results, type);
+                }
+            })
+            .catch(function() {
+                completedRequests++;
+                if (completedRequests >= totalRequests) {
+                    if (results.length === 0) {
+                        resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different address.</div>';
+                    } else {
+                        renderAutocompleteResults(results, type);
+                    }
+                }
+            });
+    }
 
-                html += '<div class="autocomplete-item" data-lat="' + result.lat + '" data-lng="' + result.lon + '" data-address="' + displayName.replace(/"/g, '&quot;') + '">';
-                html += '<span class="main-text">' + typeLabel + ' ' + mainText + '</span>';
-                html += '<span class="sub-text">' + subText + '</span>';
-                html += '</div>';
+    // Safety timeout - if providers don't respond
+    setTimeout(function() {
+        if (completedRequests < totalRequests) {
+            completedRequests = totalRequests;
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<div class="searching-indicator">Search timed out. Please try again.</div>';
+            } else {
+                renderAutocompleteResults(results, type);
             }
+        }
+    }, 8000);
+}
 
-            resultsContainer.innerHTML = html;
-
-            // Add click handlers
-            var items = resultsContainer.querySelectorAll('.autocomplete-item');
-            for (var j = 0; j < items.length; j++) {
-                items[j].addEventListener('click', function() {
-                    var lat = parseFloat(this.dataset.lat);
-                    var lng = parseFloat(this.dataset.lng);
-                    var address = this.dataset.address;
-                    var coords = { lat: lat, lng: lng };
-
-                    // Set the input value
-                    input.value = address;
-
-                    // Set the location
-                    setLocation(type, coords, address);
-
-                    // Clear results
-                    resultsContainer.classList.remove('active');
-                    resultsContainer.innerHTML = '';
-
-                    // Pan to location
-                    BookingState.map.flyTo({
-                        center: [lng, lat],
-                        zoom: 13,
-                        duration: 1000
-                    });
-                });
-            }
-        })
-        .catch(function() {
-            resultsContainer.innerHTML = '<div class="searching-indicator">Error searching. Please try again.</div>';
+function processGeocodeResults(data, provider) {
+    var results = [];
+    
+    for (var i = 0; i < data.length; i++) {
+        var item = data[i];
+        var lat, lng, displayName, mainText, subText, typeLabel;
+        
+        // Handle different provider formats
+        if (provider === 'Nominatim') {
+            lat = parseFloat(item.lat);
+            lng = parseFloat(item.lon);
+            displayName = item.display_name;
+            mainText = item.name || displayName.split(',')[0] || 'Unknown';
+            subText = displayName.replace(mainText, '').trim().replace(/^,/, '').trim() || 'South Africa';
+            
+            // Add type indicator
+            if (item.type === 'city') typeLabel = '🏙️';
+            else if (item.type === 'town') typeLabel = '🏘️';
+            else if (item.type === 'village') typeLabel = '🏘️';
+            else if (item.type === 'suburb') typeLabel = '🏠';
+            else if (item.type === 'road') typeLabel = '🛣️';
+            else if (item.type === 'house' || item.type === 'building') typeLabel = '🏠';
+            else typeLabel = '📍';
+        } else if (provider === 'Photon') {
+            lat = parseFloat(item.geometry.coordinates[1]);
+            lng = parseFloat(item.geometry.coordinates[0]);
+            displayName = item.properties.name || item.properties.street || '';
+            var context = item.properties.city || item.properties.town || item.properties.village || item.properties.state || '';
+            mainText = displayName || 'Unknown';
+            subText = context ? context + ', South Africa' : 'South Africa';
+            
+            // Add type indicator
+            if (item.properties.osm_value === 'city') typeLabel = '🏙️';
+            else if (item.properties.osm_value === 'town') typeLabel = '🏘️';
+            else if (item.properties.osm_value === 'village') typeLabel = '🏘️';
+            else if (item.properties.osm_value === 'suburb') typeLabel = '🏠';
+            else typeLabel = '📍';
+        }
+        
+        // Make sure we have valid coordinates
+        if (isNaN(lat) || isNaN(lng)) continue;
+        
+        results.push({
+            lat: lat,
+            lng: lng,
+            address: displayName || mainText + ', ' + subText,
+            mainText: mainText,
+            subText: subText,
+            typeLabel: typeLabel || '📍'
         });
+    }
+    
+    return results;
+}
+
+function renderAutocompleteResults(results, type) {
+    var resultsId = type === 'pickup' ? 'pickupAutocomplete' : 'dropoffAutocomplete';
+    var resultsContainer = document.getElementById(resultsId);
+    var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
+    var input = document.getElementById(inputId);
+
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different address.</div>';
+        return;
+    }
+
+    // Remove duplicates
+    var uniqueResults = [];
+    var seen = {};
+    for (var i = 0; i < results.length; i++) {
+        var key = results[i].lat + ',' + results[i].lng;
+        if (!seen[key]) {
+            seen[key] = true;
+            uniqueResults.push(results[i]);
+        }
+    }
+
+    // Limit to 10 results
+    uniqueResults = uniqueResults.slice(0, 10);
+
+    var html = '';
+    for (var j = 0; j < uniqueResults.length; j++) {
+        var result = uniqueResults[j];
+        html += '<div class="autocomplete-item" data-lat="' + result.lat + '" data-lng="' + result.lng + '" data-address="' + result.address.replace(/"/g, '&quot;') + '">';
+        html += '<span class="main-text">' + result.typeLabel + ' ' + result.mainText + '</span>';
+        html += '<span class="sub-text">' + result.subText + '</span>';
+        html += '</div>';
+    }
+
+    resultsContainer.innerHTML = html;
+
+    // Add click handlers
+    var items = resultsContainer.querySelectorAll('.autocomplete-item');
+    for (var k = 0; k < items.length; k++) {
+        items[k].addEventListener('click', function() {
+            var lat = parseFloat(this.dataset.lat);
+            var lng = parseFloat(this.dataset.lng);
+            var address = this.dataset.address;
+            var coords = { lat: lat, lng: lng };
+
+            input.value = address;
+            setLocation(type, coords, address);
+            resultsContainer.classList.remove('active');
+            resultsContainer.innerHTML = '';
+
+            BookingState.map.flyTo({
+                center: [lng, lat],
+                zoom: 13,
+                duration: 1000
+            });
+        });
+    }
 }
 
 function findAddress(type) {
@@ -344,47 +461,77 @@ function findAddress(type) {
         return;
     }
 
-    // Show loading state
     var btnId = type === 'pickup' ? 'pickupFindBtn' : 'dropoffFindBtn';
     var btn = document.getElementById(btnId);
     btn.textContent = '...';
     btn.disabled = true;
 
-    var url = NOMINATIM_URL + '/search?format=json&q=' + encodeURIComponent(query + ', South Africa') + '&countrycodes=za&limit=1&addressdetails=1';
-
+    // Try multiple providers for find
+    var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ', South Africa') + '&countrycodes=za&limit=1&addressdetails=1';
+    
     fetch(url)
-        .then(function(response) { return response.json(); })
+        .then(function(response) { 
+            if (!response.ok) throw new Error('Network error');
+            return response.json(); 
+        })
         .then(function(data) {
-            btn.textContent = 'Find';
-            btn.disabled = false;
+            if (data && data.length > 0) {
+                var result = data[0];
+                var lat = parseFloat(result.lat);
+                var lng = parseFloat(result.lon);
+                var address = result.display_name || query;
+                var coords = { lat: lat, lng: lng };
 
-            if (!data || data.length === 0) {
-                showToast('Could not find that address. Please try again.', 'error');
+                setLocation(type, coords, address);
+                BookingState.map.flyTo({
+                    center: [lng, lat],
+                    zoom: 13,
+                    duration: 1000
+                });
+                btn.textContent = 'Find';
+                btn.disabled = false;
                 return;
             }
+            
+            // Try Photon as fallback
+            var photonUrl = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query + ', South Africa') + '&limit=1&lang=en';
+            return fetch(photonUrl);
+        })
+        .then(function(response) {
+            if (response && response.ok) {
+                return response.json();
+            }
+            throw new Error('No results');
+        })
+        .then(function(data) {
+            if (data && data.features && data.features.length > 0) {
+                var result = data.features[0];
+                var lat = result.geometry.coordinates[1];
+                var lng = result.geometry.coordinates[0];
+                var address = result.properties.name || result.properties.street || query;
+                var coords = { lat: lat, lng: lng };
 
-            var result = data[0];
-            var lat = parseFloat(result.lat);
-            var lng = parseFloat(result.lon);
-            var address = result.display_name || query;
-            var coords = { lat: lat, lng: lng };
-
-            setLocation(type, coords, address);
-            BookingState.map.flyTo({
-                center: [lng, lat],
-                zoom: 13,
-                duration: 1000
-            });
+                setLocation(type, coords, address);
+                BookingState.map.flyTo({
+                    center: [lng, lat],
+                    zoom: 13,
+                    duration: 1000
+                });
+            } else {
+                showToast('Could not find that address. Please try again.', 'error');
+            }
+            btn.textContent = 'Find';
+            btn.disabled = false;
         })
         .catch(function() {
             btn.textContent = 'Find';
             btn.disabled = false;
-            showToast('Error finding address. Please try again.', 'error');
+            showToast('Could not find that address. Please try again.', 'error');
         });
 }
 
 function reverseGeocode(lat, lng, callback) {
-    var url = NOMINATIM_URL + '/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1';
+    var url = 'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1';
 
     fetch(url)
         .then(function(response) { return response.json(); })
@@ -438,12 +585,10 @@ function setLocation(type, coords, address) {
     var lng = coords.lng;
     var map = BookingState.map;
 
-    // Create marker element
     var markerEl = document.createElement('div');
     markerEl.className = 'custom-marker ' + (type === 'pickup' ? 'custom-marker-pickup' : 'custom-marker-dropoff');
     markerEl.innerHTML = '<span>' + (type === 'pickup' ? 'P' : 'D') + '</span>';
 
-    // Create popup content
     var popupContent = '<strong>' + (type === 'pickup' ? 'Pickup' : 'Drop-off') + '</strong><br>' + address;
 
     if (type === 'pickup') {
@@ -458,7 +603,6 @@ function setLocation(type, coords, address) {
         .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupContent))
         .addTo(map);
 
-        // Handle drag
         BookingState.pickupMarker.on('dragend', function() {
             var pos = this.getLngLat();
             var newCoords = { lat: pos.lat, lng: pos.lng };
@@ -487,7 +631,6 @@ function setLocation(type, coords, address) {
         .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(popupContent))
         .addTo(map);
 
-        // Handle drag
         BookingState.dropoffMarker.on('dragend', function() {
             var pos = this.getLngLat();
             var newCoords = { lat: pos.lat, lng: pos.lng };
@@ -506,7 +649,6 @@ function setLocation(type, coords, address) {
         document.getElementById('dropoffSearch').value = address;
     }
 
-    // Fit bounds to show both markers
     if (BookingState.pickupMarker && BookingState.dropoffMarker) {
         var bounds = new maplibregl.LngLatBounds();
         bounds.extend([BookingState.pickupCoords.lng, BookingState.pickupCoords.lat]);
@@ -531,6 +673,19 @@ function clearAllLocations() {
         BookingState.routeLine.remove();
         BookingState.routeLine = null;
     }
+    // Remove route layers
+    if (BookingState.routeLayerId && BookingState.map) {
+        try {
+            BookingState.map.removeLayer(BookingState.routeLayerId);
+        } catch(e) {}
+        BookingState.routeLayerId = null;
+    }
+    if (BookingState.routeSourceId && BookingState.map) {
+        try {
+            BookingState.map.removeSource(BookingState.routeSourceId);
+        } catch(e) {}
+        BookingState.routeSourceId = null;
+    }
 
     BookingState.pickupCoords = null;
     BookingState.dropoffCoords = null;
@@ -546,7 +701,6 @@ function clearAllLocations() {
     document.getElementById('totalPrice').textContent = 'R0.00';
     document.getElementById('discountRow').style.display = 'none';
 
-    // Clear autocomplete results
     document.getElementById('pickupAutocomplete').classList.remove('active');
     document.getElementById('pickupAutocomplete').innerHTML = '';
     document.getElementById('dropoffAutocomplete').classList.remove('active');
@@ -567,47 +721,40 @@ function calculatePrice() {
     updatePriceSummary();
     document.getElementById('distanceValue').textContent = distance.toFixed(1) + ' km';
 
-    // Draw route
     drawRoute();
 }
 
 function drawRoute() {
     if (!BookingState.pickupCoords || !BookingState.dropoffCoords) return;
 
-    if (BookingState.routeLine) {
-        BookingState.routeLine.remove();
-        BookingState.routeLine = null;
-    }
-
     var map = BookingState.map;
 
-    // Get route from OSRM (Open Source Routing Machine)
+    // Remove old route
+    if (BookingState.routeLayerId && map) {
+        try { map.removeLayer(BookingState.routeLayerId); } catch(e) {}
+        BookingState.routeLayerId = null;
+    }
+    if (BookingState.routeSourceId && map) {
+        try { map.removeSource(BookingState.routeSourceId); } catch(e) {}
+        BookingState.routeSourceId = null;
+    }
+
+    // Get route from OSRM
     var url = 'https://router.project-osrm.org/route/v1/driving/' +
         BookingState.pickupCoords.lng + ',' + BookingState.pickupCoords.lat + ';' +
         BookingState.dropoffCoords.lng + ',' + BookingState.dropoffCoords.lat +
         '?overview=full&geometries=geojson';
 
     fetch(url)
-        .then(function(response) { return response.json(); })
+        .then(function(response) { 
+            if (!response.ok) throw new Error('Network error');
+            return response.json(); 
+        })
         .then(function(data) {
             if (data && data.routes && data.routes.length > 0) {
                 var route = data.routes[0];
                 var geometry = route.geometry;
 
-                // Draw the route
-                if (BookingState.routeLine) {
-                    BookingState.routeLine.remove();
-                }
-
-                BookingState.routeLine = new maplibregl.GeoJSONSource({
-                    data: {
-                        type: 'Feature',
-                        properties: {},
-                        geometry: geometry
-                    }
-                });
-
-                // Add source and layer
                 var sourceId = 'route-line-' + Date.now();
                 var layerId = 'route-layer-' + Date.now();
 
@@ -635,19 +782,12 @@ function drawRoute() {
                     }
                 });
 
-                // Store layer ID for removal later
                 BookingState.routeLayerId = layerId;
                 BookingState.routeSourceId = sourceId;
             }
         })
         .catch(function() {
             // Fallback: draw straight line
-            if (BookingState.routeLine) {
-                BookingState.routeLine.remove();
-                BookingState.routeLine = null;
-            }
-
-            // Draw a simple line using a GeoJSON source
             var coords = [
                 [BookingState.pickupCoords.lng, BookingState.pickupCoords.lat],
                 [BookingState.dropoffCoords.lng, BookingState.dropoffCoords.lat]
@@ -656,36 +796,40 @@ function drawRoute() {
             var sourceId = 'route-line-' + Date.now();
             var layerId = 'route-layer-' + Date.now();
 
-            map.addSource(sourceId, {
-                type: 'geojson',
-                data: {
-                    type: 'Feature',
-                    properties: {},
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: coords
+            try {
+                map.addSource(sourceId, {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        properties: {},
+                        geometry: {
+                            type: 'LineString',
+                            coordinates: coords
+                        }
                     }
-                }
-            });
+                });
 
-            map.addLayer({
-                id: layerId,
-                type: 'line',
-                source: sourceId,
-                layout: {
-                    'line-join': 'round',
-                    'line-cap': 'round'
-                },
-                paint: {
-                    'line-color': '#F5A623',
-                    'line-width': 4,
-                    'line-opacity': 0.8,
-                    'line-dasharray': [8, 6]
-                }
-            });
+                map.addLayer({
+                    id: layerId,
+                    type: 'line',
+                    source: sourceId,
+                    layout: {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    paint: {
+                        'line-color': '#F5A623',
+                        'line-width': 4,
+                        'line-opacity': 0.8,
+                        'line-dasharray': [8, 6]
+                    }
+                });
 
-            BookingState.routeLayerId = layerId;
-            BookingState.routeSourceId = sourceId;
+                BookingState.routeLayerId = layerId;
+                BookingState.routeSourceId = sourceId;
+            } catch(e) {
+                // Failed to draw fallback
+            }
         });
 }
 
