@@ -30,10 +30,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (!user) return;
     BookingState.currentUser = user;
 
-    // Initialize MapLibre
     MapLibreService.init('booking-map');
-
-    // Initialize Location Search
     LocationSearch.init('pickupSearch', 'dropoffSearch', 'pickupAutocomplete', 'dropoffAutocomplete');
 
     setupUIHandlers();
@@ -49,7 +46,6 @@ document.addEventListener('DOMContentLoaded', async function() {
    LOCATION EVENTS
    ===================================================================== */
 function setupLocationEvents() {
-    // When pickup is selected
     document.addEventListener('pickupSelected', function(e) {
         var detail = e.detail;
         BookingState.pickupCoords = { lat: detail.lat, lng: detail.lng };
@@ -57,7 +53,6 @@ function setupLocationEvents() {
         calculateRoute();
     });
 
-    // When dropoff is selected
     document.addEventListener('dropoffSelected', function(e) {
         var detail = e.detail;
         BookingState.dropoffCoords = { lat: detail.lat, lng: detail.lng };
@@ -65,7 +60,6 @@ function setupLocationEvents() {
         calculateRoute();
     });
 
-    // When both locations are ready
     document.addEventListener('locationsReady', function(e) {
         var detail = e.detail;
         BookingState.pickupCoords = detail.pickup;
@@ -73,7 +67,6 @@ function setupLocationEvents() {
         calculateRoute();
     });
 
-    // When pickup is dragged
     document.addEventListener('pickupDragged', function(e) {
         var detail = e.detail;
         BookingState.pickupCoords = { lat: detail.lat, lng: detail.lng };
@@ -89,7 +82,6 @@ function setupLocationEvents() {
             });
     });
 
-    // When dropoff is dragged
     document.addEventListener('dropoffDragged', function(e) {
         var detail = e.detail;
         BookingState.dropoffCoords = { lat: detail.lat, lng: detail.lng };
@@ -105,12 +97,10 @@ function setupLocationEvents() {
             });
     });
 
-    // Use current location button
     document.getElementById('useCurrentLocationBtn').addEventListener('click', function() {
         LocationSearch.useCurrentLocation();
     });
 
-    // Clear map button
     document.getElementById('clearMapBtn').addEventListener('click', function() {
         LocationSearch.clear();
         BookingState.pickupCoords = null;
@@ -147,19 +137,15 @@ function calculateRoute() {
             BookingState.isCalculating = false;
             BookingState.routeData = result;
 
-            // Update distance and duration
             BookingState.distance = result.distance;
             BookingState.duration = result.duration;
 
-            // Draw route on map
             MapLibreService.drawRoute(result.route);
 
-            // Update UI
             document.getElementById('distanceValue').textContent = result.distance.toFixed(1) + ' km';
             document.getElementById('timeValue').textContent = result.durationFormatted;
             document.getElementById('distanceDisplay').textContent = result.distance.toFixed(1) + ' km';
 
-            // Calculate price
             var basePrice = result.distance * APP_CONFIG.pricePerKm * BookingState.seats;
             var discount = BookingState.promoDiscount / 100 * basePrice;
             var total = basePrice - discount;
@@ -179,7 +165,6 @@ function calculateRoute() {
             console.error('Route calculation error:', err);
             showToast('Could not calculate route. Please try again.', 'error');
 
-            // Fallback: use straight-line distance
             var distance = calculateDistanceKm(
                 pickup.lat, pickup.lng,
                 dropoff.lat, dropoff.lng
@@ -225,7 +210,6 @@ async function doLogout() {
         if (logoutBtn) logoutBtn.textContent = 'Logging out...';
         if (mobileLogout) mobileLogout.textContent = '⏳ Logging out...';
 
-        // Clean up map resources
         MapLibreService.destroy();
 
         var { error } = await supabaseClient.auth.signOut();
