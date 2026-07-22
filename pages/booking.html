@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Book a Trip | Luu Travels & Logistics</title>
 <link rel="icon" type="image/png" href="../assets/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -10,212 +10,335 @@
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
 <link rel="stylesheet" href="../css/style.css">
 <link rel="stylesheet" href="../css/booking.css">
+<link rel="stylesheet" href="../css/location-search.css">
 <!-- Paystack Script -->
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <style>
-    .address-search-row {
-        position: relative;
+    .booking-layout {
+        display: grid;
+        grid-template-columns: 1.1fr 1fr;
+        gap: 24px;
+        padding: 32px 24px;
+        max-width: 1300px;
+        margin: 0 auto;
+        align-items: start;
+    }
+
+    .map-panel {
+        background: var(--secondary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        position: sticky;
+        top: 24px;
+    }
+
+    .map-panel-header {
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--gray-200);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: var(--secondary);
+    }
+
+    .map-panel-header h3 {
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .map-panel-header .btn {
+        min-height: 36px;
+        padding: 0 16px;
+        font-size: 0.8rem;
+    }
+
+    .booking-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .panel-card {
+        background: var(--secondary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 24px;
+    }
+
+    .panel-card h3 {
+        font-size: 1.05rem;
+        margin-bottom: 16px;
+    }
+
+    .route-filter {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .route-chip {
+        padding: 10px 18px;
+        border-radius: 999px;
+        border: 1.5px solid var(--gray-200);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--secondary);
+        color: var(--gray-600);
+        transition: all 0.2s ease;
+    }
+
+    .route-chip:hover {
+        border-color: var(--accent);
+    }
+
+    .route-chip.active {
+        background: var(--primary);
+        color: var(--secondary);
+        border-color: var(--primary);
+    }
+
+    .seat-selector {
         display: flex;
         align-items: center;
-        gap: 8px;
-        margin-bottom: 10px;
+        gap: 14px;
     }
-    .address-search-row input {
+
+    .seat-selector button {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        border: 1.5px solid var(--gray-200);
+        background: var(--secondary);
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: var(--primary);
+        transition: all 0.2s ease;
+    }
+
+    .seat-selector button:hover {
+        border-color: var(--accent);
+        background: rgba(245, 166, 35, 0.05);
+    }
+
+    .seat-selector input {
+        width: 60px;
+        text-align: center;
+        border: none;
+        background: transparent;
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+
+    .price-summary {
+        border-top: 1px dashed var(--gray-200);
+        padding-top: 16px;
+        margin-top: 16px;
+    }
+
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+        color: var(--gray-600);
+    }
+
+    .price-row.total {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--primary);
+        border-top: 1px solid var(--gray-200);
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+
+    .payment-options {
+        display: flex;
+        gap: 12px;
+    }
+
+    .payment-option {
         flex: 1;
-        padding: 12px 14px 12px 40px;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 10px;
+        padding: 14px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--gray-600);
+        font-size: 0.88rem;
+        transition: all 0.2s ease;
+    }
+
+    .payment-option:hover {
+        border-color: var(--accent);
+    }
+
+    .payment-option.selected {
+        border-color: var(--accent);
+        background: rgba(245, 166, 35, 0.08);
+        color: var(--primary);
+    }
+
+    .payment-option small {
+        display: block;
+        font-weight: 400;
+        margin-top: 4px;
+        color: var(--gray-400);
+    }
+
+    .booking-type-btn {
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1.5px solid var(--gray-200);
+        background: var(--secondary);
+        color: var(--gray-600);
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .booking-type-btn:hover {
+        border-color: var(--accent);
+    }
+
+    .booking-type-btn.active {
+        background: var(--primary);
+        color: var(--secondary);
+        border-color: var(--primary);
+    }
+
+    .time-slot-chip {
+        padding: 8px 16px;
+        border-radius: 999px;
+        border: 1.5px solid var(--gray-200);
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--secondary);
+        color: var(--gray-600);
+        transition: all 0.2s ease;
+    }
+
+    .time-slot-chip:hover {
+        border-color: var(--accent);
+        background: rgba(245, 166, 35, 0.05);
+    }
+
+    .time-slot-chip.active {
+        background: var(--primary);
+        color: var(--secondary);
+        border-color: var(--primary);
+    }
+
+    .trip-empty {
+        text-align: center;
+        padding: 30px 20px;
+        color: var(--gray-600);
+        font-size: 0.9rem;
+    }
+
+    .promo-input-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .promo-input-group input {
+        flex: 1;
+        padding: 10px 14px;
         border: 1.5px solid var(--gray-200);
         border-radius: 8px;
         font-size: 0.95rem;
-        background: var(--secondary);
-        min-height: 48px;
-        width: 100%;
     }
-    .address-search-row input:focus {
+
+    .promo-input-group input:focus {
         outline: none;
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(245,166,35,0.15);
     }
-    .address-dot {
-        position: absolute;
-        left: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 10;
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        border: 2px solid white;
-        box-shadow: 0 0 0 2px var(--gray-300);
-        flex-shrink: 0;
-    }
-    .address-dot-green {
-        background: var(--success);
-    }
-    .address-dot-red {
-        background: var(--danger);
-    }
-    .address-search-row .btn {
-        flex-shrink: 0;
-        min-height: 48px;
-        padding: 0 20px;
-    }
-    #booking-map {
-        height: 420px;
-        width: 100%;
-        border-radius: 8px;
-        overflow: hidden;
-    }
-    #booking-map .maplibregl-map {
-        border-radius: 8px;
-    }
-    .map-panel {
-        position: relative;
-    }
-    /* Autocomplete dropdown */
-    .autocomplete-results {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border-radius: 0 0 8px 8px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-        max-height: 280px;
-        overflow-y: auto;
-        z-index: 1000;
-        margin-top: 2px;
-        border: 1px solid var(--gray-200);
-        border-top: none;
-        display: none;
-        width: 100%;
-    }
-    .autocomplete-results.active {
-        display: block;
-    }
-    .autocomplete-item {
-        padding: 10px 14px;
-        cursor: pointer;
-        border-bottom: 1px solid var(--gray-100);
-        font-size: 0.9rem;
-        transition: background 0.15s ease;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    .autocomplete-item:hover {
-        background: var(--gray-100);
-    }
-    .autocomplete-item:last-child {
-        border-bottom: none;
-    }
-    .autocomplete-item .icon {
-        font-size: 1.1rem;
-        flex-shrink: 0;
-    }
-    .autocomplete-item .main-text {
-        font-weight: 500;
-        color: var(--dark-text);
-        flex: 1;
-    }
-    .autocomplete-item .sub-text {
-        font-size: 0.78rem;
-        color: var(--gray-600);
-        display: block;
-        margin-top: 1px;
-    }
-    .searching-indicator {
-        padding: 12px 16px;
-        color: var(--gray-600);
-        font-size: 0.9rem;
-        text-align: center;
-    }
-    .location-btn {
-        background: var(--primary);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 10px 16px;
-        cursor: pointer;
-        font-weight: 600;
+
+    .promo-message {
+        margin-top: 8px;
         font-size: 0.85rem;
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        transition: background 0.2s ease;
     }
-    .location-btn:hover {
-        background: var(--primary-light);
-    }
-    .map-controls {
+
+    .booking-type-group {
         display: flex;
         gap: 10px;
-        margin-top: 10px;
+        flex-wrap: wrap;
     }
-    .map-controls .btn {
-        flex: 1;
-        min-height: 44px;
+
+    /* ADS */
+    .ad-card-large {
+        background: var(--secondary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 30px 35px;
+        margin-bottom: 20px;
+        border-left: 6px solid var(--accent);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
-    /* Custom markers */
-    .custom-marker {
-        width: 30px;
-        height: 30px;
-        border-radius: 50% 50% 50% 0;
-        border: 3px solid white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 11px;
-        color: white;
-        transform: rotate(-45deg);
-        cursor: pointer;
+
+    .ad-card-large:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(17, 28, 90, 0.15);
     }
-    .custom-marker-pickup {
-        background: var(--success);
+
+    .ad-card-large h4 {
+        font-size: 1.3rem;
+        color: var(--primary);
+        margin-bottom: 8px;
     }
-    .custom-marker-dropoff {
-        background: var(--danger);
+
+    .ad-card-large p {
+        color: var(--gray-600);
+        font-size: 1.05rem;
+        line-height: 1.6;
     }
-    .custom-marker span {
-        transform: rotate(45deg);
+
+    .ad-card-large img {
+        width: 120px;
+        height: 120px;
+        object-fit: cover;
+        border-radius: 12px;
+        flex-shrink: 0;
     }
-    /* Map click instructions */
-    .map-instruction {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(0,0,0,0.7);
-        color: white;
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        pointer-events: none;
-        z-index: 10;
-        display: none;
+
+    @media (max-width: 980px) {
+        .booking-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .map-panel {
+            position: static;
+        }
     }
-    .map-instruction.show {
-        display: block;
-    }
+
     @media (max-width: 768px) {
-        .address-search-row {
-            flex-wrap: wrap;
+        .booking-layout {
+            padding: 16px 12px;
         }
-        .address-search-row input {
-            min-height: 44px;
-            font-size: 0.9rem;
+
+        .panel-card {
+            padding: 16px;
         }
-        .address-search-row .btn {
-            min-height: 44px;
-            font-size: 0.85rem;
-            padding: 0 14px;
+
+        .ad-card-large {
+            padding: 20px;
         }
-        #booking-map {
-            height: 300px;
+
+        .ad-card-large h4 {
+            font-size: 1.1rem;
+        }
+
+        .ad-card-large p {
+            font-size: 0.95rem;
+        }
+
+        .ad-card-large img {
+            width: 80px;
+            height: 80px;
         }
     }
 </style>
@@ -228,24 +351,24 @@
             <img src="../assets/logo.png" alt="Luu Travels logo">
             <span class="brand-name">Luu Travels <span>& Logistics</span></span>
         </a>
-        
+
         <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
             <span></span>
             <span></span>
             <span></span>
         </button>
-        
+
         <div class="nav-links">
             <a href="dashboard.html">Dashboard</a>
             <a href="booking.html">Book Trip</a>
             <a href="profile.html">Profile</a>
         </div>
-        
+
         <div class="nav-actions">
             <button class="btn btn-outline btn-sm" id="logoutBtn" style="color:var(--secondary); border-color:var(--secondary);">Logout</button>
         </div>
     </div>
-    
+
     <div class="mobile-menu" id="mobileMenu">
         <a href="dashboard.html">📋 Dashboard</a>
         <a href="booking.html" class="active">🚐 Book Trip</a>
@@ -267,35 +390,39 @@
             <h3>📍 Set Your Locations</h3>
             <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary);" id="clearMapBtn">Clear All</button>
         </div>
-        
-        <!-- Address inputs with autocomplete -->
+
+        <!-- Address search with professional autocomplete -->
         <div class="address-search">
             <div class="address-search-row">
                 <span class="address-dot address-dot-green"></span>
-                <input type="text" id="pickupSearch" placeholder="Enter pickup address, e.g. 123 Seshego Street, Polokwane" autocomplete="off">
+                <input type="text" id="pickupSearch" placeholder="Enter pickup address, e.g. 123 Church Street, Pretoria" autocomplete="off">
             </div>
             <div id="pickupAutocomplete" class="autocomplete-results"></div>
-            
+
             <div class="address-search-row">
                 <span class="address-dot address-dot-red"></span>
                 <input type="text" id="dropoffSearch" placeholder="Enter drop-off address, e.g. 45 Bree Street, Johannesburg" autocomplete="off">
             </div>
             <div id="dropoffAutocomplete" class="autocomplete-results"></div>
-            
+
             <div class="map-controls">
                 <button class="location-btn" id="useCurrentLocationBtn">
                     📍 Use My Current Location
                 </button>
             </div>
         </div>
-        
+
         <!-- Map -->
         <div id="booking-map"></div>
-        
+
         <div class="map-info-bar">
             <div class="info-item">
                 <div class="info-label">Distance</div>
                 <div class="info-value" id="distanceValue">— km</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Est. Time</div>
+                <div class="info-value" id="timeValue">—</div>
             </div>
             <div class="info-item">
                 <div class="info-label">Est. Price</div>
@@ -303,8 +430,8 @@
             </div>
         </div>
         <p style="padding:0 20px 16px; font-size:0.82rem; color:var(--gray-600);">
-            Start typing an address and select from suggestions. 
-            <strong style="color:var(--success);">Green</strong> is pickup, 
+            Start typing an address and select from suggestions.
+            <strong style="color:var(--success);">Green</strong> is pickup,
             <strong style="color:var(--danger);">red</strong> is drop-off.
             Click on the map to set locations directly.
         </p>
@@ -342,11 +469,11 @@
 
         <div class="panel-card">
             <h3>4. Promo Code</h3>
-            <div style="display:flex; gap:10px;">
-                <input type="text" id="promoCode" placeholder="Enter promo code" style="flex:1; padding:10px 14px; border:1.5px solid var(--gray-200); border-radius:8px; font-size:0.95rem;">
+            <div class="promo-input-group">
+                <input type="text" id="promoCode" placeholder="Enter promo code">
                 <button class="btn btn-primary btn-sm" id="applyPromoBtn">Apply</button>
             </div>
-            <div id="promoMessage" style="margin-top:8px; font-size:0.85rem;"></div>
+            <div id="promoMessage" class="promo-message"></div>
         </div>
 
         <div class="panel-card">
@@ -360,13 +487,13 @@
                     <span style="font-size:0.82rem; color:var(--gray-600);">Max 9 seats</span>
                 </div>
             </div>
-            
+
             <div class="form-group">
                 <label>Booking Type</label>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="booking-type-btn active" data-type="passenger" style="padding:8px 16px; border-radius:999px; border:1.5px solid var(--gray-200); background:var(--primary); color:var(--secondary); cursor:pointer; font-weight:600;">👤 Passenger</button>
-                    <button class="booking-type-btn" data-type="parcel" style="padding:8px 16px; border-radius:999px; border:1.5px solid var(--gray-200); background:var(--secondary); color:var(--gray-600); cursor:pointer; font-weight:600;">📦 Parcel</button>
-                    <button class="booking-type-btn" data-type="quote" style="padding:8px 16px; border-radius:999px; border:1.5px solid var(--gray-200); background:var(--secondary); color:var(--gray-600); cursor:pointer; font-weight:600;">💰 Get Quote</button>
+                <div class="booking-type-group">
+                    <button class="booking-type-btn active" data-type="passenger">👤 Passenger</button>
+                    <button class="booking-type-btn" data-type="parcel">📦 Parcel</button>
+                    <button class="booking-type-btn" data-type="quote">💰 Get Quote</button>
                 </div>
             </div>
 
@@ -382,7 +509,7 @@
                 <div class="price-row" id="discountRow" style="display:none;"><span>Discount</span><span id="discountDisplay">-R0.00</span></div>
                 <div class="price-row total"><span>Total</span><span id="totalPrice">R0.00</span></div>
             </div>
-            
+
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:16px;">
                 <button class="btn btn-primary btn-block" id="payWithCardBtn" style="flex:1; background:var(--accent); color:var(--primary);">
                     💳 Pay with Card
@@ -406,19 +533,19 @@
             <h2 style="font-size:1.8rem;">Latest from Luu Travels</h2>
         </div>
         <div class="ads-banner-large" id="adsBannerLarge">
-            <div class="ad-card-large" style="background:var(--secondary); border-radius:var(--radius); box-shadow:var(--shadow); padding:30px; margin-bottom:20px; border-left:6px solid var(--accent);">
+            <div class="ad-card-large" style="border-left-color:var(--accent);">
                 <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
                     <div style="flex:1;">
-                        <h4 style="font-size:1.3rem; color:var(--primary); margin-bottom:8px;">🚐 Welcome to Luu Travels!</h4>
-                        <p style="color:var(--gray-600); font-size:1.05rem; line-height:1.6;">Safe and reliable shuttle transport between Gauteng and Limpopo. Book your trip today!</p>
+                        <h4>🚐 Welcome to Luu Travels!</h4>
+                        <p>Safe and reliable shuttle transport between Gauteng and Limpopo. Book your trip today!</p>
                     </div>
                 </div>
             </div>
-            <div class="ad-card-large" style="background:var(--secondary); border-radius:var(--radius); box-shadow:var(--shadow); padding:30px; margin-bottom:20px; border-left:6px solid var(--success);">
+            <div class="ad-card-large" style="border-left-color:var(--success);">
                 <div style="display:flex; gap:24px; align-items:center; flex-wrap:wrap;">
                     <div style="flex:1;">
-                        <h4 style="font-size:1.3rem; color:var(--primary); margin-bottom:8px;">🎉 Special Offer</h4>
-                        <p style="color:var(--gray-600); font-size:1.05rem; line-height:1.6;">Book your trip now and get 10% off with code <strong style="color:var(--accent-dark);">WELCOME10</strong></p>
+                        <h4>🎉 Special Offer</h4>
+                        <p>Book your trip now and get 10% off with code <strong style="color:var(--accent-dark);">WELCOME10</strong></p>
                     </div>
                 </div>
             </div>
@@ -435,11 +562,12 @@
     </div>
 </footer>
 
-<!-- MapLibre GL JS -->
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/maplibre-service.js"></script>
+<script src="../js/location-search.js"></script>
 <script src="../js/booking.js"></script>
 </body>
 </html>
