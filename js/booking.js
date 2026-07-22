@@ -31,19 +31,78 @@ var BookingState = {
 
 var WHATSAPP_NUMBER = '27768457061';
 
-// Multiple geocoding providers for better South Africa coverage
+// South African specific geocoding - multiple providers for rural areas
 var GEOCODING_PROVIDERS = [
     {
         name: 'Nominatim',
         url: 'https://nominatim.openstreetmap.org/search?format=json&q=',
-        params: '&countrycodes=za&limit=8&addressdetails=1&bounded=1&viewbox=16.5,-33.5,33.5,-22.5'
+        params: '&countrycodes=za&limit=10&addressdetails=1&bounded=1&viewbox=16.5,-33.5,33.5,-22.5&extratags=1&namedetails=1'
     },
     {
         name: 'Photon',
         url: 'https://photon.komoot.io/api/?q=',
-        params: '&limit=8&lang=en&osm_tag=place&osm_tag=city&osm_tag=town&osm_tag=village&osm_tag=suburb&osm_tag=hamlet&osm_tag=neighbourhood&osm_tag=locality&bbox=16.5,-33.5,33.5,-22.5'
+        params: '&limit=10&lang=en&osm_tag=place&osm_tag=city&osm_tag=town&osm_tag=village&osm_tag=suburb&osm_tag=hamlet&osm_tag=neighbourhood&osm_tag=locality&osm_tag=district&bbox=16.5,-33.5,33.5,-22.5'
+    },
+    {
+        // South African specific fallback - using OpenStreetMap with South African bias
+        name: 'OSM_ZA',
+        url: 'https://nominatim.openstreetmap.org/search?format=json&q=',
+        params: '&countrycodes=za&limit=10&addressdetails=1&bounded=1&viewbox=16.5,-33.5,33.5,-22.5&extratags=1'
     }
 ];
+
+// South African city/town database for quick lookup
+var SA_TOWNS = {
+    'seshego': { lat: -23.8333, lng: 29.4167, display: 'Seshego, Limpopo' },
+    'polokwane': { lat: -23.9045, lng: 29.4689, display: 'Polokwane, Limpopo' },
+    'burgersfort': { lat: -24.6667, lng: 30.3333, display: 'Burgersfort, Limpopo' },
+    'tzaneen': { lat: -23.8333, lng: 30.1667, display: 'Tzaneen, Limpopo' },
+    'mankweng': { lat: -23.8833, lng: 29.6833, display: 'Mankweng, Limpopo' },
+    'lebowa': { lat: -24.0000, lng: 29.5000, display: 'Lebowa, Limpopo' },
+    'ga-matlala': { lat: -24.5000, lng: 28.5000, display: 'Ga-Matlala, Limpopo' },
+    'mokopane': { lat: -24.1667, lng: 29.0000, display: 'Mokopane, Limpopo' },
+    'thohoyandou': { lat: -22.9500, lng: 30.4833, display: 'Thohoyandou, Limpopo' },
+    'giyani': { lat: -23.3167, lng: 30.7167, display: 'Giyani, Limpopo' },
+    'vuwani': { lat: -23.0000, lng: 30.5000, display: 'Vuwani, Limpopo' },
+    'phalaborwa': { lat: -23.9333, lng: 31.1500, display: 'Phalaborwa, Limpopo' },
+    'hoedspruit': { lat: -24.3500, lng: 30.9500, display: 'Hoedspruit, Limpopo' },
+    'musina': { lat: -22.3333, lng: 30.0333, display: 'Musina, Limpopo' },
+    'makhado': { lat: -23.0000, lng: 29.9167, display: 'Makhado, Limpopo' },
+    'waterberg': { lat: -24.0000, lng: 28.0000, display: 'Waterberg, Limpopo' },
+    'bela-bela': { lat: -24.8833, lng: 28.2833, display: 'Bela-Bela, Limpopo' },
+    'modimolle': { lat: -24.7000, lng: 28.4000, display: 'Modimolle, Limpopo' },
+    'lepelle': { lat: -24.5000, lng: 29.5000, display: 'Lepelle, Limpopo' },
+    'sekhukhune': { lat: -24.5000, lng: 29.8000, display: 'Sekhukhune, Limpopo' },
+    'sibasa': { lat: -22.9667, lng: 30.4667, display: 'Sibasa, Limpopo' },
+    'dendron': { lat: -23.3667, lng: 29.3167, display: 'Dendron, Limpopo' },
+    'malamulele': { lat: -22.9833, lng: 30.7000, display: 'Malamulele, Limpopo' },
+    // Gauteng
+    'soweto': { lat: -26.2485, lng: 27.8580, display: 'Soweto, Gauteng' },
+    'tembisa': { lat: -25.9833, lng: 28.2167, display: 'Tembisa, Gauteng' },
+    'alexandra': { lat: -26.1064, lng: 28.0978, display: 'Alexandra, Gauteng' },
+    // Mpumalanga
+    'nelspruit': { lat: -25.4667, lng: 30.9833, display: 'Nelspruit, Mpumalanga' },
+    'witbank': { lat: -25.8667, lng: 29.2333, display: 'Witbank, Mpumalanga' },
+    // North West
+    'rustenburg': { lat: -25.6667, lng: 27.2500, display: 'Rustenburg, North West' },
+    'mahlkeng': { lat: -25.8667, lng: 25.6333, display: 'Mahlkeng, North West' },
+    // KwaZulu-Natal
+    'durban': { lat: -29.8833, lng: 31.0500, display: 'Durban, KwaZulu-Natal' },
+    'pietermaritzburg': { lat: -29.6000, lng: 30.3833, display: 'Pietermaritzburg, KwaZulu-Natal' },
+    'richards bay': { lat: -28.8000, lng: 32.0833, display: 'Richards Bay, KwaZulu-Natal' },
+    // Western Cape
+    'cape town': { lat: -33.9253, lng: 18.4239, display: 'Cape Town, Western Cape' },
+    'stellenbosch': { lat: -33.9333, lng: 18.8500, display: 'Stellenbosch, Western Cape' },
+    // Eastern Cape
+    'port elizabeth': { lat: -33.9667, lng: 25.5833, display: 'Port Elizabeth, Eastern Cape' },
+    'east london': { lat: -32.9833, lng: 27.8667, display: 'East London, Eastern Cape' },
+    // Free State
+    'bloemfontein': { lat: -29.1167, lng: 26.2167, display: 'Bloemfontein, Free State' },
+    'welkom': { lat: -27.9833, lng: 26.7333, display: 'Welkom, Free State' },
+    // Northern Cape
+    'kimberley': { lat: -28.7333, lng: 24.7667, display: 'Kimberley, Northern Cape' },
+    'upington': { lat: -28.4000, lng: 21.2500, display: 'Upington, Northern Cape' }
+};
 
 document.addEventListener('DOMContentLoaded', async function() {
     var user = await AuthManager.requireAuth('login.html');
@@ -136,10 +195,9 @@ function setupMobileMenu() {
 }
 
 /* =====================================================================
-   MAP INITIALIZATION - MapLibre GL with better tiles
+   MAP INITIALIZATION - MapLibre GL
    ===================================================================== */
 function initMap() {
-    // Use OpenStreetMap tiles with better South Africa coverage
     var map = new maplibregl.Map({
         container: 'booking-map',
         style: {
@@ -171,27 +229,19 @@ function initMap() {
 
     BookingState.map = map;
 
-    // Add zoom controls
     map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
-
-    // Add scale control
     map.addControl(new maplibregl.ScaleControl({
         maxWidth: 100,
         unit: 'metric'
     }), 'bottom-left');
 
-    // Wait for map to load
-    map.on('load', function() {
-        // Map is ready
-    });
+    map.on('load', function() {});
 
-    // Click on map to set location
     map.on('click', function(e) {
         var lng = e.lngLat.lng;
         var lat = e.lngLat.lat;
         var coords = { lat: lat, lng: lng };
         
-        // Reverse geocode
         reverseGeocode(lat, lng, function(address) {
             if (!BookingState.pickupMarker || (BookingState.pickupMarker && BookingState.dropoffMarker)) {
                 setLocation('pickup', coords, address || 'Selected Location');
@@ -204,11 +254,9 @@ function initMap() {
         });
     });
 
-    // Setup autocomplete for pickup
     setupAutocomplete('pickup');
     setupAutocomplete('dropoff');
 
-    // Setup Find buttons
     document.getElementById('pickupFindBtn').onclick = function() {
         findAddress('pickup');
     };
@@ -216,7 +264,6 @@ function initMap() {
         findAddress('dropoff');
     };
 
-    // Enter key support
     document.getElementById('pickupSearch').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -230,19 +277,17 @@ function initMap() {
         }
     });
 
-    // Clear button
     document.getElementById('clearMapBtn').onclick = function() {
         clearAllLocations();
     };
 
-    // Current location button
     document.getElementById('useCurrentLocationBtn').onclick = function() {
         useCurrentLocation();
     };
 }
 
 /* =====================================================================
-   IMPROVED ADDRESS AUTOCOMPLETE WITH MULTIPLE PROVIDERS
+   IMPROVED ADDRESS SEARCH WITH SOUTH AFRICA FOCUS
    ===================================================================== */
 function setupAutocomplete(type) {
     var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
@@ -262,11 +307,10 @@ function setupAutocomplete(type) {
         }
 
         BookingState[timeoutKey] = setTimeout(function() {
-            searchAddressImproved(query, type);
-        }, 400);
+            searchAddressSA(query, type);
+        }, 300);
     });
 
-    // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
         if (!resultsContainer.contains(e.target) && e.target !== input) {
             resultsContainer.classList.remove('active');
@@ -274,125 +318,170 @@ function setupAutocomplete(type) {
     });
 }
 
-function searchAddressImproved(query, type) {
+function searchAddressSA(query, type) {
     var resultsId = type === 'pickup' ? 'pickupAutocomplete' : 'dropoffAutocomplete';
     var resultsContainer = document.getElementById(resultsId);
     var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
     var input = document.getElementById(inputId);
 
-    // Show loading
     resultsContainer.innerHTML = '<div class="searching-indicator">🔍 Searching...</div>';
     resultsContainer.classList.add('active');
 
-    // Try multiple providers
-    var providers = GEOCODING_PROVIDERS;
-    var results = [];
-    var completedRequests = 0;
-    var totalRequests = providers.length;
+    var allResults = [];
+    var lowerQuery = query.toLowerCase();
+    var providersCompleted = 0;
+    var totalProviders = GEOCODING_PROVIDERS.length;
 
-    for (var p = 0; p < providers.length; p++) {
-        var provider = providers[p];
+    // 1. First check local SA towns database for quick matches
+    var localMatches = [];
+    for (var town in SA_TOWNS) {
+        if (town.includes(lowerQuery) || lowerQuery.includes(town)) {
+            localMatches.push({
+                lat: SA_TOWNS[town].lat,
+                lng: SA_TOWNS[town].lng,
+                address: SA_TOWNS[town].display,
+                mainText: SA_TOWNS[town].display.split(',')[0] || town,
+                subText: SA_TOWNS[town].display,
+                typeLabel: '🏘️',
+                source: 'local'
+            });
+        }
+    }
+
+    // Add local matches to results
+    for (var i = 0; i < localMatches.length; i++) {
+        allResults.push(localMatches[i]);
+    }
+
+    // 2. Try multiple geocoding providers in parallel
+    for (var p = 0; p < totalProviders; p++) {
+        var provider = GEOCODING_PROVIDERS[p];
         var url = provider.url + encodeURIComponent(query + ', South Africa') + provider.params;
 
         fetch(url)
-            .then(function(response) { 
+            .then(function(response) {
                 if (!response.ok) throw new Error('Network error');
-                return response.json(); 
+                return response.json();
             })
             .then(function(data) {
-                completedRequests++;
+                providersCompleted++;
                 if (data && data.length > 0) {
-                    // Process results
-                    var processed = processGeocodeResults(data, provider.name);
-                    results = results.concat(processed);
+                    var processed = processGeocodeResultsSA(data, provider.name);
+                    for (var j = 0; j < processed.length; j++) {
+                        allResults.push(processed[j]);
+                    }
                 }
                 
-                // If this is the last request or we have enough results, render
-                if (completedRequests >= totalRequests || results.length >= 10) {
-                    renderAutocompleteResults(results, type);
+                if (providersCompleted >= totalProviders || allResults.length >= 15) {
+                    renderAutocompleteResultsSA(allResults, type);
                 }
             })
             .catch(function() {
-                completedRequests++;
-                if (completedRequests >= totalRequests) {
-                    if (results.length === 0) {
+                providersCompleted++;
+                if (providersCompleted >= totalProviders) {
+                    if (allResults.length === 0) {
                         resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different address.</div>';
                     } else {
-                        renderAutocompleteResults(results, type);
+                        renderAutocompleteResultsSA(allResults, type);
                     }
                 }
             });
     }
 
-    // Safety timeout - if providers don't respond
+    // Safety timeout
     setTimeout(function() {
-        if (completedRequests < totalRequests) {
-            completedRequests = totalRequests;
-            if (results.length === 0) {
+        if (providersCompleted < totalProviders) {
+            providersCompleted = totalProviders;
+            if (allResults.length === 0) {
                 resultsContainer.innerHTML = '<div class="searching-indicator">Search timed out. Please try again.</div>';
             } else {
-                renderAutocompleteResults(results, type);
+                renderAutocompleteResultsSA(allResults, type);
             }
         }
-    }, 8000);
+    }, 10000);
 }
 
-function processGeocodeResults(data, provider) {
+function processGeocodeResultsSA(data, provider) {
     var results = [];
     
     for (var i = 0; i < data.length; i++) {
         var item = data[i];
         var lat, lng, displayName, mainText, subText, typeLabel;
         
-        // Handle different provider formats
-        if (provider === 'Nominatim') {
+        if (provider === 'Nominatim' || provider === 'OSM_ZA') {
             lat = parseFloat(item.lat);
             lng = parseFloat(item.lon);
             displayName = item.display_name;
-            mainText = item.name || displayName.split(',')[0] || 'Unknown';
+            mainText = item.name || item.display_name.split(',')[0] || 'Unknown';
             subText = displayName.replace(mainText, '').trim().replace(/^,/, '').trim() || 'South Africa';
             
-            // Add type indicator
-            if (item.type === 'city') typeLabel = '🏙️';
-            else if (item.type === 'town') typeLabel = '🏘️';
-            else if (item.type === 'village') typeLabel = '🏘️';
-            else if (item.type === 'suburb') typeLabel = '🏠';
-            else if (item.type === 'road') typeLabel = '🛣️';
-            else if (item.type === 'house' || item.type === 'building') typeLabel = '🏠';
-            else typeLabel = '📍';
+            if (item.extratags && item.extratags.place) {
+                if (item.extratags.place === 'city') typeLabel = '🏙️';
+                else if (item.extratags.place === 'town') typeLabel = '🏘️';
+                else if (item.extratags.place === 'village') typeLabel = '🏘️';
+                else if (item.extratags.place === 'suburb') typeLabel = '🏠';
+                else if (item.extratags.place === 'hamlet') typeLabel = '🏡';
+                else typeLabel = '📍';
+            } else if (item.type) {
+                if (item.type === 'city') typeLabel = '🏙️';
+                else if (item.type === 'town') typeLabel = '🏘️';
+                else if (item.type === 'village') typeLabel = '🏘️';
+                else if (item.type === 'suburb') typeLabel = '🏠';
+                else if (item.type === 'hamlet') typeLabel = '🏡';
+                else if (item.type === 'road') typeLabel = '🛣️';
+                else typeLabel = '📍';
+            } else {
+                typeLabel = '📍';
+            }
         } else if (provider === 'Photon') {
-            lat = parseFloat(item.geometry.coordinates[1]);
-            lng = parseFloat(item.geometry.coordinates[0]);
-            displayName = item.properties.name || item.properties.street || '';
+            var coords = item.geometry.coordinates;
+            lat = coords[1];
+            lng = coords[0];
+            mainText = item.properties.name || item.properties.street || '';
             var context = item.properties.city || item.properties.town || item.properties.village || item.properties.state || '';
-            mainText = displayName || 'Unknown';
             subText = context ? context + ', South Africa' : 'South Africa';
+            displayName = mainText + ', ' + subText;
             
-            // Add type indicator
-            if (item.properties.osm_value === 'city') typeLabel = '🏙️';
-            else if (item.properties.osm_value === 'town') typeLabel = '🏘️';
-            else if (item.properties.osm_value === 'village') typeLabel = '🏘️';
-            else if (item.properties.osm_value === 'suburb') typeLabel = '🏠';
-            else typeLabel = '📍';
+            if (item.properties.osm_value) {
+                if (item.properties.osm_value === 'city') typeLabel = '🏙️';
+                else if (item.properties.osm_value === 'town') typeLabel = '🏘️';
+                else if (item.properties.osm_value === 'village') typeLabel = '🏘️';
+                else if (item.properties.osm_value === 'suburb') typeLabel = '🏠';
+                else if (item.properties.osm_value === 'hamlet') typeLabel = '🏡';
+                else typeLabel = '📍';
+            } else {
+                typeLabel = '📍';
+            }
         }
         
-        // Make sure we have valid coordinates
         if (isNaN(lat) || isNaN(lng)) continue;
         
-        results.push({
-            lat: lat,
-            lng: lng,
-            address: displayName || mainText + ', ' + subText,
-            mainText: mainText,
-            subText: subText,
-            typeLabel: typeLabel || '📍'
-        });
+        // Check if this result is already in the list (avoid duplicates)
+        var isDuplicate = false;
+        for (var r = 0; r < results.length; r++) {
+            if (Math.abs(results[r].lat - lat) < 0.001 && Math.abs(results[r].lng - lng) < 0.001) {
+                isDuplicate = true;
+                break;
+            }
+        }
+        
+        if (!isDuplicate) {
+            results.push({
+                lat: lat,
+                lng: lng,
+                address: displayName || mainText + ', ' + subText,
+                mainText: mainText,
+                subText: subText,
+                typeLabel: typeLabel || '📍',
+                source: provider
+            });
+        }
     }
     
     return results;
 }
 
-function renderAutocompleteResults(results, type) {
+function renderAutocompleteResultsSA(results, type) {
     var resultsId = type === 'pickup' ? 'pickupAutocomplete' : 'dropoffAutocomplete';
     var resultsContainer = document.getElementById(resultsId);
     var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
@@ -403,32 +492,31 @@ function renderAutocompleteResults(results, type) {
         return;
     }
 
-    // Remove duplicates
-    var uniqueResults = [];
-    var seen = {};
-    for (var i = 0; i < results.length; i++) {
-        var key = results[i].lat + ',' + results[i].lng;
-        if (!seen[key]) {
-            seen[key] = true;
-            uniqueResults.push(results[i]);
-        }
-    }
+    // Sort results: local matches first, then by relevance
+    results.sort(function(a, b) {
+        if (a.source === 'local' && b.source !== 'local') return -1;
+        if (a.source !== 'local' && b.source === 'local') return 1;
+        return 0;
+    });
 
-    // Limit to 10 results
-    uniqueResults = uniqueResults.slice(0, 10);
+    // Limit to 12 results
+    var displayResults = results.slice(0, 12);
 
     var html = '';
-    for (var j = 0; j < uniqueResults.length; j++) {
-        var result = uniqueResults[j];
-        html += '<div class="autocomplete-item" data-lat="' + result.lat + '" data-lng="' + result.lng + '" data-address="' + result.address.replace(/"/g, '&quot;') + '">';
+    for (var j = 0; j < displayResults.length; j++) {
+        var result = displayResults[j];
+        var address = result.address.replace(/"/g, '&quot;');
+        html += '<div class="autocomplete-item" data-lat="' + result.lat + '" data-lng="' + result.lng + '" data-address="' + address + '">';
         html += '<span class="main-text">' + result.typeLabel + ' ' + result.mainText + '</span>';
         html += '<span class="sub-text">' + result.subText + '</span>';
+        if (result.source === 'local') {
+            html += ' <span style="font-size:0.7rem; color:var(--success);">✓</span>';
+        }
         html += '</div>';
     }
 
     resultsContainer.innerHTML = html;
 
-    // Add click handlers
     var items = resultsContainer.querySelectorAll('.autocomplete-item');
     for (var k = 0; k < items.length; k++) {
         items[k].addEventListener('click', function() {
@@ -466,13 +554,30 @@ function findAddress(type) {
     btn.textContent = '...';
     btn.disabled = true;
 
-    // Try multiple providers for find
+    // First check local database
+    var lowerQuery = query.toLowerCase();
+    for (var town in SA_TOWNS) {
+        if (town.includes(lowerQuery) || lowerQuery.includes(town)) {
+            var coords = { lat: SA_TOWNS[town].lat, lng: SA_TOWNS[town].lng };
+            setLocation(type, coords, SA_TOWNS[town].display);
+            BookingState.map.flyTo({
+                center: [coords.lng, coords.lat],
+                zoom: 13,
+                duration: 1000
+            });
+            btn.textContent = 'Find';
+            btn.disabled = false;
+            return;
+        }
+    }
+
+    // Try Nominatim
     var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ', South Africa') + '&countrycodes=za&limit=1&addressdetails=1';
     
     fetch(url)
-        .then(function(response) { 
+        .then(function(response) {
             if (!response.ok) throw new Error('Network error');
-            return response.json(); 
+            return response.json();
         })
         .then(function(data) {
             if (data && data.length > 0) {
@@ -518,7 +623,7 @@ function findAddress(type) {
                     duration: 1000
                 });
             } else {
-                showToast('Could not find that address. Please try again.', 'error');
+                showToast('Could not find that address. Please try again or click on the map.', 'error');
             }
             btn.textContent = 'Find';
             btn.disabled = false;
@@ -526,7 +631,7 @@ function findAddress(type) {
         .catch(function() {
             btn.textContent = 'Find';
             btn.disabled = false;
-            showToast('Could not find that address. Please try again.', 'error');
+            showToast('Could not find that address. Please try clicking on the map.', 'error');
         });
 }
 
@@ -673,7 +778,6 @@ function clearAllLocations() {
         BookingState.routeLine.remove();
         BookingState.routeLine = null;
     }
-    // Remove route layers
     if (BookingState.routeLayerId && BookingState.map) {
         try {
             BookingState.map.removeLayer(BookingState.routeLayerId);
@@ -729,7 +833,6 @@ function drawRoute() {
 
     var map = BookingState.map;
 
-    // Remove old route
     if (BookingState.routeLayerId && map) {
         try { map.removeLayer(BookingState.routeLayerId); } catch(e) {}
         BookingState.routeLayerId = null;
@@ -739,16 +842,15 @@ function drawRoute() {
         BookingState.routeSourceId = null;
     }
 
-    // Get route from OSRM
     var url = 'https://router.project-osrm.org/route/v1/driving/' +
         BookingState.pickupCoords.lng + ',' + BookingState.pickupCoords.lat + ';' +
         BookingState.dropoffCoords.lng + ',' + BookingState.dropoffCoords.lat +
         '?overview=full&geometries=geojson';
 
     fetch(url)
-        .then(function(response) { 
+        .then(function(response) {
             if (!response.ok) throw new Error('Network error');
-            return response.json(); 
+            return response.json();
         })
         .then(function(data) {
             if (data && data.routes && data.routes.length > 0) {
@@ -787,7 +889,6 @@ function drawRoute() {
             }
         })
         .catch(function() {
-            // Fallback: draw straight line
             var coords = [
                 [BookingState.pickupCoords.lng, BookingState.pickupCoords.lat],
                 [BookingState.dropoffCoords.lng, BookingState.dropoffCoords.lat]
@@ -827,9 +928,7 @@ function drawRoute() {
 
                 BookingState.routeLayerId = layerId;
                 BookingState.routeSourceId = sourceId;
-            } catch(e) {
-                // Failed to draw fallback
-            }
+            } catch(e) {}
         });
 }
 
