@@ -15,12 +15,16 @@ var LocationSearch = {
     currentDropoffCoords: null,
     isSearching: false,
     searchAbortController: null,
+    pickupFindBtn: null,
+    dropoffFindBtn: null,
 
     init: function(pickupInputId, dropoffInputId, pickupResultsId, dropoffResultsId) {
         this.pickupInput = document.getElementById(pickupInputId);
         this.dropoffInput = document.getElementById(dropoffInputId);
         this.pickupResults = document.getElementById(pickupResultsId);
         this.dropoffResults = document.getElementById(dropoffResultsId);
+        this.pickupFindBtn = document.getElementById('pickupFindBtn');
+        this.dropoffFindBtn = document.getElementById('dropoffFindBtn');
 
         if (!this.pickupInput || !this.dropoffInput) {
             console.error('LocationSearch: Input elements not found');
@@ -29,6 +33,7 @@ var LocationSearch = {
 
         this.setupInputEvents('pickup');
         this.setupInputEvents('dropoff');
+        this.setupFindButtons();
         this.setupOutsideClick();
     },
 
@@ -47,7 +52,6 @@ var LocationSearch = {
                 return;
             }
 
-            // Reset selection flag
             if (type === 'pickup') {
                 LocationSearch.pickupSelected = false;
             } else {
@@ -66,6 +70,13 @@ var LocationSearch = {
                 var firstResult = resultsContainer.querySelector('.search-result-item');
                 if (firstResult) {
                     firstResult.click();
+                } else {
+                    // If no results, try the Find button
+                    if (type === 'pickup') {
+                        LocationSearch.findAddress('pickup');
+                    } else {
+                        LocationSearch.findAddress('dropoff');
+                    }
                 }
             }
         });
@@ -97,12 +108,25 @@ var LocationSearch = {
             }
         });
 
-        // Handle blur
         input.addEventListener('blur', function() {
             setTimeout(function() {
                 resultsContainer.classList.remove('active');
             }, 200);
         });
+    },
+
+    setupFindButtons: function() {
+        if (this.pickupFindBtn) {
+            this.pickupFindBtn.addEventListener('click', function() {
+                LocationSearch.findAddress('pickup');
+            });
+        }
+
+        if (this.dropoffFindBtn) {
+            this.dropoffFindBtn.addEventListener('click', function() {
+                LocationSearch.findAddress('dropoff');
+            });
+        }
     },
 
     setupOutsideClick: function() {
@@ -117,11 +141,9 @@ var LocationSearch = {
     performSearch: function(query, type) {
         var resultsContainer = type === 'pickup' ? this.pickupResults : this.dropoffResults;
 
-        // Show loading state
         resultsContainer.innerHTML = '<div class="searching-indicator">🔍 Searching...</div>';
         resultsContainer.classList.add('active');
 
-        // Cancel previous search
         if (this.searchAbortController) {
             this.searchAbortController.abort();
         }
@@ -132,13 +154,13 @@ var LocationSearch = {
                 if (results && results.length > 0) {
                     LocationSearch.renderResults(results, type);
                 } else {
-                    resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different search.</div>';
+                    resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try the Find button or drag the pin.</div>';
                 }
             })
             .catch(function(err) {
                 if (err.name !== 'AbortError') {
                     console.error('Search error:', err);
-                    resultsContainer.innerHTML = '<div class="searching-indicator">Search error. Please try again.</div>';
+                    resultsContainer.innerHTML = '<div class="searching-indicator">Search error. Please try the Find button.</div>';
                 }
             });
     },
@@ -162,7 +184,6 @@ var LocationSearch = {
         resultsContainer.innerHTML = html;
         resultsContainer.classList.add('active');
 
-        // Add click handlers
         var items = resultsContainer.querySelectorAll('.search-result-item');
         for (var j = 0; j < items.length; j++) {
             items[j].addEventListener('click', function() {
@@ -173,6 +194,52 @@ var LocationSearch = {
                 LocationSearch.selectResult(lng, lat, label, type);
             });
         }
+    },
+
+    findAddress: function(type) {
+        var input = type === 'pickup' ? this.pickupInput : this.dropoffInput;
+        var query = input.value.trim();
+
+        if (!query) {
+            showToast('Please type an address first.', 'error');
+            return;
+        }
+
+        var btn = type === 'pickup' ? this.pickupFindBtn : this.dropoffFindBtn;
+        btn.textContent = '⏳...';
+        btn.disabled = true;
+
+        // Use OpenRouteService geocoding directly
+        var url = 'https://api.openrouteservice.org/geocode/search?api_key=' + APP_CONFIG.openRouteServiceKey + '&text=' + encodeURIComponent(query + ', South Africa') + '&boundary.country=ZA&size=1';
+
+        fetch(url)
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Geocoding error: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                btn.textContent = '🔍 Find';
+                btn.disabled = false;
+
+                if (data && data.features && data.features.length > 0) {
+                    var feature = data.features[0];
+                    var coords = feature.geometry.coordinates;
+                    var label = feature.properties.label || query;
+
+                    LocationSearch.selectResult(coords[0], coords[1], label, type);
+                    showToast('Location found: ' + label, 'success');
+                } else {
+                    showToast('Could not find that address. Please try dragging the pin on the map.', 'error');
+                }
+            })
+            .catch(function(err) {
+                btn.textContent = '🔍 Find';
+                btn.disabled = false;
+                console.error('Find address error:', err);
+                showToast('Error finding address. Please try dragging the pin on the map.', 'error');
+            });
     },
 
     selectResult: function(lng, lat, label, type) {
@@ -207,7 +274,6 @@ var LocationSearch = {
             }
         }
 
-        // Trigger route calculation if both locations exist
         if (this.currentPickupCoords && this.currentDropoffCoords) {
             var routeEvent = new CustomEvent('locationsReady', {
                 detail: {
