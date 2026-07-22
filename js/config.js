@@ -16,14 +16,13 @@ var APP_CONFIG = {
     whatsappNumber: '27768457061',
     email: 'LuuTravels611@gmail.com',
     address: 'Windmill Park Ext 32, Boksburg, Gauteng, South Africa',
-    pricePerKm: 2.20,
+    pricePerKm: 2.11,
     maxSeats: 9,
     routes: ['Gauteng-Limpopo', 'Limpopo-Gauteng'],
     currency: 'R',
     paystackPublicKey: 'pk_test_d2da5d0e56a7fa1e7c308f9d2e8bff76b970e4d7',
     paystackSecretKey: 'sk_test_72c3b06c8ef3be59dbcc18d74bdc1479642fba39',
-    // OpenRouteService API Key - Replace with your own key if needed
-    // Get a free key at: https://openrouteservice.org/sign-up/
+    // OpenRouteService API Key
     openRouteServiceKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjlhOTc0MzI1Yzg2YzQ0OTI5ZDJiOWZjOWM1MjJlMDk1IiwiaCI6Im11cm11cjY0In0='
 };
 
