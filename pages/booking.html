@@ -53,6 +53,158 @@
         font-size: 0.8rem;
     }
 
+    .address-search {
+        padding: 12px 16px;
+        background: var(--gray-100);
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .address-search-row {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .address-search-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .address-search-row .address-dot {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--gray-300);
+        flex-shrink: 0;
+    }
+
+    .address-search-row .address-dot-green {
+        background: var(--success);
+    }
+
+    .address-search-row .address-dot-red {
+        background: var(--danger);
+    }
+
+    .address-search-row input {
+        flex: 1;
+        padding: 12px 14px 12px 38px;
+        border: 1.5px solid var(--gray-200);
+        border-radius: 8px;
+        font-size: 0.95rem;
+        background: var(--secondary);
+        min-height: 48px;
+        width: 100%;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .address-search-row input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.15);
+    }
+
+    .address-search-row input::placeholder {
+        color: var(--gray-400);
+    }
+
+    .address-search-row .btn-find {
+        flex-shrink: 0;
+        min-height: 48px;
+        padding: 0 20px;
+        background: var(--primary);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        font-size: 0.9rem;
+    }
+
+    .address-search-row .btn-find:hover {
+        background: var(--primary-light);
+    }
+
+    .address-search-row .btn-find:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    #booking-map {
+        height: 420px;
+        width: 100%;
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--gray-100);
+    }
+
+    #booking-map .maplibregl-map {
+        border-radius: 8px;
+    }
+
+    .map-info-bar {
+        display: flex;
+        justify-content: space-around;
+        padding: 12px 20px;
+        background: var(--secondary);
+        border-top: 1px solid var(--gray-200);
+    }
+
+    .map-info-bar .info-item {
+        text-align: center;
+        flex: 1;
+    }
+
+    .map-info-bar .info-label {
+        font-size: 0.7rem;
+        color: var(--gray-600);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .map-info-bar .info-value {
+        font-family: var(--font-display);
+        font-weight: 700;
+        color: var(--primary);
+        font-size: 1.05rem;
+        margin-top: 2px;
+    }
+
+    .map-instruction-box {
+        padding: 12px 20px;
+        background: #FFF8E1;
+        border-top: 1px solid var(--gray-200);
+        font-size: 0.82rem;
+        color: var(--gray-700);
+        line-height: 1.5;
+    }
+
+    .map-instruction-box strong {
+        color: var(--primary);
+    }
+
+    .map-instruction-box .icon {
+        margin-right: 6px;
+    }
+
+    .map-instruction-box .highlight-green {
+        color: var(--success);
+        font-weight: 600;
+    }
+
+    .map-instruction-box .highlight-red {
+        color: var(--danger);
+        font-weight: 600;
+    }
+
     .booking-panel {
         display: flex;
         flex-direction: column;
@@ -269,7 +421,6 @@
         flex-wrap: wrap;
     }
 
-    /* ADS */
     .ad-card-large {
         background: var(--secondary);
         border-radius: var(--radius);
@@ -308,6 +459,7 @@
     @media (max-width: 980px) {
         .booking-layout {
             grid-template-columns: 1fr;
+            padding: 16px 12px;
         }
 
         .map-panel {
@@ -317,7 +469,7 @@
 
     @media (max-width: 768px) {
         .booking-layout {
-            padding: 16px 12px;
+            padding: 12px 8px;
         }
 
         .panel-card {
@@ -339,6 +491,56 @@
         .ad-card-large img {
             width: 80px;
             height: 80px;
+        }
+
+        #booking-map {
+            height: 300px;
+        }
+
+        .address-search {
+            padding: 10px 12px;
+        }
+
+        .address-search-row {
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .address-search-row input {
+            min-height: 44px;
+            font-size: 0.9rem;
+            padding: 10px 12px 10px 36px;
+        }
+
+        .address-search-row .btn-find {
+            min-height: 44px;
+            font-size: 0.85rem;
+            padding: 0 14px;
+        }
+
+        .address-search-row .address-dot {
+            width: 10px;
+            height: 10px;
+            left: 12px;
+        }
+
+        .map-info-bar {
+            padding: 10px 12px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .map-info-bar .info-item {
+            min-width: 60px;
+        }
+
+        .map-info-bar .info-value {
+            font-size: 0.9rem;
+        }
+
+        .map-instruction-box {
+            padding: 10px 14px;
+            font-size: 0.75rem;
         }
     }
 </style>
@@ -391,17 +593,19 @@
             <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary);" id="clearMapBtn">Clear All</button>
         </div>
 
-        <!-- Address search with professional autocomplete -->
+        <!-- Address search with Find button -->
         <div class="address-search">
             <div class="address-search-row">
                 <span class="address-dot address-dot-green"></span>
                 <input type="text" id="pickupSearch" placeholder="Enter pickup address, e.g. 123 Church Street, Pretoria" autocomplete="off">
+                <button class="btn-find" id="pickupFindBtn">🔍 Find</button>
             </div>
             <div id="pickupAutocomplete" class="autocomplete-results"></div>
 
             <div class="address-search-row">
                 <span class="address-dot address-dot-red"></span>
                 <input type="text" id="dropoffSearch" placeholder="Enter drop-off address, e.g. 45 Bree Street, Johannesburg" autocomplete="off">
+                <button class="btn-find" id="dropoffFindBtn">🔍 Find</button>
             </div>
             <div id="dropoffAutocomplete" class="autocomplete-results"></div>
 
@@ -415,6 +619,7 @@
         <!-- Map -->
         <div id="booking-map"></div>
 
+        <!-- Map Info Bar -->
         <div class="map-info-bar">
             <div class="info-item">
                 <div class="info-label">Distance</div>
@@ -429,12 +634,15 @@
                 <div class="info-value" id="estimatedPriceValue">R0.00</div>
             </div>
         </div>
-        <p style="padding:0 20px 16px; font-size:0.82rem; color:var(--gray-600);">
-            Start typing an address and select from suggestions.
-            <strong style="color:var(--success);">Green</strong> is pickup,
-            <strong style="color:var(--danger);">red</strong> is drop-off.
-            Click on the map to set locations directly.
-        </p>
+
+        <!-- Location Instruction Box -->
+        <div class="map-instruction-box">
+            <span class="icon">💡</span>
+            <strong>Tip:</strong> Can't find your exact location? 
+            <span class="highlight-green">Move the green pin</span> or 
+            <span class="highlight-red">red pin</span> manually by dragging it on the map. 
+            You can also type the suburb or area name where your pickup/drop-off is located.
+        </div>
     </div>
 
     <div class="booking-panel">
@@ -504,7 +712,7 @@
 
             <div class="price-summary">
                 <div class="price-row"><span>Distance</span><span id="distanceDisplay">— km</span></div>
-                <div class="price-row"><span>Price per km</span><span>R2.20</span></div>
+                <div class="price-row"><span>Price per km</span><span>R2.11</span></div>
                 <div class="price-row"><span>Passengers</span><span id="passengerCount">1</span></div>
                 <div class="price-row" id="discountRow" style="display:none;"><span>Discount</span><span id="discountDisplay">-R0.00</span></div>
                 <div class="price-row total"><span>Total</span><span id="totalPrice">R0.00</span></div>
