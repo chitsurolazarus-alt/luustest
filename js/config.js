@@ -22,9 +22,9 @@ var APP_CONFIG = {
     currency: 'R',
     paystackPublicKey: 'pk_test_d2da5d0e56a7fa1e7c308f9d2e8bff76b970e4d7',
     paystackSecretKey: 'sk_test_72c3b06c8ef3be59dbcc18d74bdc1479642fba39',
-    // OpenRouteService API Key - Replace with your own key
+    // OpenRouteService API Key - Replace with your own key if needed
     // Get a free key at: https://openrouteservice.org/sign-up/
-    openRouteServiceKey: '5b3ce3597851110001cf62489cc5f78757174a20ae7c7366f4980461'
+    openRouteServiceKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjlhOTc0MzI1Yzg2YzQ0OTI5ZDJiOWZjOWM1MjJlMDk1IiwiaCI6Im11cm11cjY0In0='
 };
 
 function pathPrefix() {
