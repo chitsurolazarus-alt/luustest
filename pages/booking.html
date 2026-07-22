@@ -6,29 +6,160 @@
 <title>Book a Trip | Luu Travels & Logistics</title>
 <link rel="icon" type="image/png" href="../assets/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- Google Maps API with Places -->
-<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDx6kS9mBkE0_pz22MlJkQAWXg3Bh_p67k&libraries=places&callback=initMap" async defer></script>
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<!-- Leaflet Control Geocoder CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
 <link rel="stylesheet" href="../css/style.css">
 <link rel="stylesheet" href="../css/booking.css">
 <!-- Paystack Script -->
 <script src="https://js.paystack.co/v1/inline.js"></script>
 <style>
-    .pac-container {
+    .leaflet-control-geocoder {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15) !important;
+    }
+    .leaflet-control-geocoder-form {
+        display: flex !important;
+        width: 100% !important;
+    }
+    .leaflet-control-geocoder-form input {
+        flex: 1 !important;
+        padding: 10px 14px !important;
+        border: 1.5px solid var(--gray-200) !important;
+        border-radius: 8px 0 0 8px !important;
+        font-size: 0.95rem !important;
+        font-family: inherit !important;
+        min-height: 44px !important;
+    }
+    .leaflet-control-geocoder-form input:focus {
+        outline: none !important;
+        border-color: var(--accent) !important;
+    }
+    .leaflet-control-geocoder-form button {
+        padding: 10px 16px !important;
+        background: var(--primary) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 0 8px 8px 0 !important;
+        cursor: pointer !important;
+        font-weight: 600 !important;
+        min-height: 44px !important;
+    }
+    .leaflet-control-geocoder-form button:hover {
+        background: var(--primary-light) !important;
+    }
+    .leaflet-control-geocoder-results {
+        position: absolute !important;
+        top: 100% !important;
+        left: 0 !important;
+        right: 0 !important;
+        background: white !important;
+        border-radius: 0 0 8px 8px !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+        max-height: 250px !important;
+        overflow-y: auto !important;
         z-index: 1000 !important;
+        margin-top: 2px !important;
+    }
+    .leaflet-control-geocoder-results a {
+        display: block !important;
+        padding: 10px 14px !important;
+        color: var(--dark-text) !important;
+        text-decoration: none !important;
+        font-size: 0.9rem !important;
+        border-bottom: 1px solid var(--gray-200) !important;
+        cursor: pointer !important;
+    }
+    .leaflet-control-geocoder-results a:hover {
+        background: var(--gray-100) !important;
+    }
+    .leaflet-control-geocoder-results a:last-child {
+        border-bottom: none !important;
+    }
+    .leaflet-control-geocoder-results .leaflet-control-geocoder-no-results {
+        padding: 10px 14px !important;
+        color: var(--gray-600) !important;
+    }
+    .address-search-row {
+        position: relative;
+    }
+    .address-search-row .leaflet-control-geocoder {
+        position: static !important;
+    }
+    .address-search-row .leaflet-control-geocoder-form input {
+        padding-left: 40px !important;
+    }
+    .address-dot {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 10;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 0 0 2px var(--gray-300);
+    }
+    .address-dot-green {
+        background: var(--success);
+    }
+    .address-dot-red {
+        background: var(--danger);
+    }
+    #booking-map {
+        height: 400px;
+        width: 100%;
         border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        overflow: hidden;
     }
-    .pac-item {
-        padding: 10px 15px;
-        font-size: 0.9rem;
-        cursor: pointer;
+    .map-panel {
+        position: relative;
     }
-    .pac-item:hover {
-        background: var(--gray-100);
+    .custom-marker-pickup {
+        background: var(--success);
+        border: 3px solid white;
+        border-radius: 50% 50% 50% 0;
+        width: 24px;
+        height: 24px;
+        transform: rotate(-45deg);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
-    .pac-item-query {
-        font-weight: 600;
-        color: var(--primary);
+    .custom-marker-pickup::after {
+        content: 'P';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        color: white;
+        font-weight: bold;
+        font-size: 10px;
+    }
+    .custom-marker-dropoff {
+        background: var(--danger);
+        border: 3px solid white;
+        border-radius: 50% 50% 50% 0;
+        width: 24px;
+        height: 24px;
+        transform: rotate(-45deg);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .custom-marker-dropoff::after {
+        content: 'D';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(45deg);
+        color: white;
+        font-weight: bold;
+        font-size: 10px;
+    }
+    .leaflet-div-icon {
+        background: transparent !important;
+        border: none !important;
     }
 </style>
 </head>
@@ -74,30 +205,29 @@
 </header>
 
 <div class="booking-layout">
-    <!-- MAP PANEL - Now using Google Maps -->
     <div class="map-panel">
         <div class="map-panel-header">
             <h3>📍 Set Your Locations</h3>
             <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary);" id="clearMapBtn">Clear All</button>
         </div>
         
-        <!-- Address inputs with Google Places Autocomplete -->
+        <!-- Address inputs with Leaflet Geocoder -->
         <div class="address-search">
-            <div class="address-search-row">
+            <div class="address-search-row" style="position:relative; margin-bottom:10px;">
                 <span class="address-dot address-dot-green"></span>
-                <input type="text" id="pickupSearch" placeholder="Type your pickup address..." autocomplete="off">
-                <button type="button" class="btn btn-navy btn-sm" id="useCurrentLocationBtn" title="Use my current location">
-                    📍
-                </button>
+                <div id="pickupGeocoder" style="flex:1;"></div>
             </div>
-            <div class="address-search-row">
+            <div class="address-search-row" style="position:relative;">
                 <span class="address-dot address-dot-red"></span>
-                <input type="text" id="dropoffSearch" placeholder="Type your drop-off address..." autocomplete="off">
+                <div id="dropoffGeocoder" style="flex:1;"></div>
             </div>
+            <button class="btn btn-navy btn-sm" id="useCurrentLocationBtn" style="margin-top:10px; width:100%;">
+                📍 Use My Current Location
+            </button>
         </div>
         
-        <!-- Google Map -->
-        <div id="google-map" style="height:400px; width:100%;"></div>
+        <!-- Map -->
+        <div id="booking-map"></div>
         
         <div class="map-info-bar">
             <div class="info-item">
@@ -113,6 +243,7 @@
             Start typing your address and select from the suggestions. 
             <strong style="color:var(--success);">Green</strong> is pickup, 
             <strong style="color:var(--danger);">red</strong> is drop-off.
+            Click on the map to set locations directly.
         </p>
     </div>
 
@@ -241,6 +372,10 @@
     </div>
 </footer>
 
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet Control Geocoder -->
+<script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
