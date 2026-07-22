@@ -76,7 +76,7 @@
         position: absolute;
         top: 100%;
         left: 0;
-        right: 48px;
+        right: 0;
         background: white;
         border-radius: 0 0 8px 8px;
         box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -87,16 +87,20 @@
         border: 1px solid var(--gray-200);
         border-top: none;
         display: none;
+        width: 100%;
     }
     .autocomplete-results.active {
         display: block;
     }
     .autocomplete-item {
-        padding: 12px 16px;
+        padding: 10px 14px;
         cursor: pointer;
         border-bottom: 1px solid var(--gray-100);
         font-size: 0.9rem;
         transition: background 0.15s ease;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
     .autocomplete-item:hover {
         background: var(--gray-100);
@@ -104,19 +108,20 @@
     .autocomplete-item:last-child {
         border-bottom: none;
     }
+    .autocomplete-item .icon {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
     .autocomplete-item .main-text {
         font-weight: 500;
         color: var(--dark-text);
+        flex: 1;
     }
     .autocomplete-item .sub-text {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         color: var(--gray-600);
         display: block;
-        margin-top: 2px;
-    }
-    .autocomplete-item .highlight {
-        color: var(--accent-dark);
-        font-weight: 700;
+        margin-top: 1px;
     }
     .searching-indicator {
         padding: 12px 16px;
@@ -178,6 +183,24 @@
     .custom-marker span {
         transform: rotate(45deg);
     }
+    /* Map click instructions */
+    .map-instruction {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        pointer-events: none;
+        z-index: 10;
+        display: none;
+    }
+    .map-instruction.show {
+        display: block;
+    }
     @media (max-width: 768px) {
         .address-search-row {
             flex-wrap: wrap;
@@ -234,7 +257,7 @@
 <header class="booking-header">
     <div class="container">
         <h1>Book Your Shuttle Trip</h1>
-        <p>Select your travel date and time slot, set your pickup and drop-off locations, then pay securely.</p>
+        <p>Enter your pickup and drop-off locations, then book your trip.</p>
     </div>
 </header>
 
@@ -249,15 +272,13 @@
         <div class="address-search">
             <div class="address-search-row">
                 <span class="address-dot address-dot-green"></span>
-                <input type="text" id="pickupSearch" placeholder="Type pickup address (e.g. Boksburg, Gauteng)" autocomplete="off">
-                <button class="btn btn-navy btn-sm" id="pickupFindBtn">Find</button>
+                <input type="text" id="pickupSearch" placeholder="Enter pickup address, e.g. 123 Seshego Street, Polokwane" autocomplete="off">
             </div>
             <div id="pickupAutocomplete" class="autocomplete-results"></div>
             
             <div class="address-search-row">
                 <span class="address-dot address-dot-red"></span>
-                <input type="text" id="dropoffSearch" placeholder="Type drop-off address (e.g. Polokwane, Limpopo)" autocomplete="off">
-                <button class="btn btn-navy btn-sm" id="dropoffFindBtn">Find</button>
+                <input type="text" id="dropoffSearch" placeholder="Enter drop-off address, e.g. 45 Bree Street, Johannesburg" autocomplete="off">
             </div>
             <div id="dropoffAutocomplete" class="autocomplete-results"></div>
             
@@ -282,7 +303,7 @@
             </div>
         </div>
         <p style="padding:0 20px 16px; font-size:0.82rem; color:var(--gray-600);">
-            Start typing an address and select from suggestions, or click the <strong>Find</strong> button.
+            Start typing an address and select from suggestions. 
             <strong style="color:var(--success);">Green</strong> is pickup, 
             <strong style="color:var(--danger);">red</strong> is drop-off.
             Click on the map to set locations directly.
