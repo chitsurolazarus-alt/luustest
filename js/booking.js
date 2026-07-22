@@ -25,39 +25,41 @@ var BookingState = {
     routeSourceId: null,
     routeLayerId: null,
     pickupAutocompleteTimeout: null,
-    dropoffAutocompleteTimeout: null,
-    isGeocoding: false
+    dropoffAutocompleteTimeout: null
 };
 
 var WHATSAPP_NUMBER = '27768457061';
 
-// South African specific geocoding - multiple providers for rural areas
-var GEOCODING_PROVIDERS = [
-    {
-        name: 'Nominatim',
-        url: 'https://nominatim.openstreetmap.org/search?format=json&q=',
-        params: '&countrycodes=za&limit=10&addressdetails=1&bounded=1&viewbox=16.5,-33.5,33.5,-22.5&extratags=1&namedetails=1'
-    },
-    {
-        name: 'Photon',
-        url: 'https://photon.komoot.io/api/?q=',
-        params: '&limit=10&lang=en&osm_tag=place&osm_tag=city&osm_tag=town&osm_tag=village&osm_tag=suburb&osm_tag=hamlet&osm_tag=neighbourhood&osm_tag=locality&osm_tag=district&bbox=16.5,-33.5,33.5,-22.5'
-    },
-    {
-        // South African specific fallback - using OpenStreetMap with South African bias
-        name: 'OSM_ZA',
-        url: 'https://nominatim.openstreetmap.org/search?format=json&q=',
-        params: '&countrycodes=za&limit=10&addressdetails=1&bounded=1&viewbox=16.5,-33.5,33.5,-22.5&extratags=1'
-    }
-];
-
-// South African city/town database for quick lookup
-var SA_TOWNS = {
-    'seshego': { lat: -23.8333, lng: 29.4167, display: 'Seshego, Limpopo' },
+// Large database of South African locations for quick search
+var SA_LOCATIONS = {
+    // Gauteng Cities & Towns
+    'johannesburg': { lat: -26.2041, lng: 28.0473, display: 'Johannesburg, Gauteng' },
+    'pretoria': { lat: -25.7479, lng: 28.2293, display: 'Pretoria, Gauteng' },
+    'soweto': { lat: -26.2485, lng: 27.8580, display: 'Soweto, Gauteng' },
+    'tembisa': { lat: -25.9833, lng: 28.2167, display: 'Tembisa, Gauteng' },
+    'alexandra': { lat: -26.1064, lng: 28.0978, display: 'Alexandra, Gauteng' },
+    'boksburg': { lat: -26.2125, lng: 28.2596, display: 'Boksburg, Gauteng' },
+    'benoni': { lat: -26.1885, lng: 28.3206, display: 'Benoni, Gauteng' },
+    'kempton park': { lat: -26.1039, lng: 28.2290, display: 'Kempton Park, Gauteng' },
+    'germiston': { lat: -26.2348, lng: 28.1689, display: 'Germiston, Gauteng' },
+    'springs': { lat: -26.2500, lng: 28.4000, display: 'Springs, Gauteng' },
+    'brakpan': { lat: -26.2333, lng: 28.3667, display: 'Brakpan, Gauteng' },
+    'alberton': { lat: -26.2667, lng: 28.1167, display: 'Alberton, Gauteng' },
+    'randburg': { lat: -26.1000, lng: 28.0000, display: 'Randburg, Gauteng' },
+    'roodepoort': { lat: -26.1625, lng: 27.8725, display: 'Roodepoort, Gauteng' },
+    'sandton': { lat: -26.1076, lng: 28.0567, display: 'Sandton, Gauteng' },
+    'midrand': { lat: -25.9986, lng: 28.1285, display: 'Midrand, Gauteng' },
+    'centurion': { lat: -25.8599, lng: 28.1855, display: 'Centurion, Gauteng' },
+    'bronkhorstspruit': { lat: -25.8000, lng: 28.7333, display: 'Bronkhorstspruit, Gauteng' },
+    'cullinan': { lat: -25.6667, lng: 28.5167, display: 'Cullinan, Gauteng' },
+    'hebron': { lat: -26.0000, lng: 28.0000, display: 'Hebron, Gauteng' },
+    
+    // Limpopo Cities & Towns
     'polokwane': { lat: -23.9045, lng: 29.4689, display: 'Polokwane, Limpopo' },
-    'burgersfort': { lat: -24.6667, lng: 30.3333, display: 'Burgersfort, Limpopo' },
-    'tzaneen': { lat: -23.8333, lng: 30.1667, display: 'Tzaneen, Limpopo' },
+    'seshego': { lat: -23.8333, lng: 29.4167, display: 'Seshego, Limpopo' },
     'mankweng': { lat: -23.8833, lng: 29.6833, display: 'Mankweng, Limpopo' },
+    'tzaneen': { lat: -23.8333, lng: 30.1667, display: 'Tzaneen, Limpopo' },
+    'burgersfort': { lat: -24.6667, lng: 30.3333, display: 'Burgersfort, Limpopo' },
     'lebowa': { lat: -24.0000, lng: 29.5000, display: 'Lebowa, Limpopo' },
     'ga-matlala': { lat: -24.5000, lng: 28.5000, display: 'Ga-Matlala, Limpopo' },
     'mokopane': { lat: -24.1667, lng: 29.0000, display: 'Mokopane, Limpopo' },
@@ -68,7 +70,6 @@ var SA_TOWNS = {
     'hoedspruit': { lat: -24.3500, lng: 30.9500, display: 'Hoedspruit, Limpopo' },
     'musina': { lat: -22.3333, lng: 30.0333, display: 'Musina, Limpopo' },
     'makhado': { lat: -23.0000, lng: 29.9167, display: 'Makhado, Limpopo' },
-    'waterberg': { lat: -24.0000, lng: 28.0000, display: 'Waterberg, Limpopo' },
     'bela-bela': { lat: -24.8833, lng: 28.2833, display: 'Bela-Bela, Limpopo' },
     'modimolle': { lat: -24.7000, lng: 28.4000, display: 'Modimolle, Limpopo' },
     'lepelle': { lat: -24.5000, lng: 29.5000, display: 'Lepelle, Limpopo' },
@@ -76,29 +77,61 @@ var SA_TOWNS = {
     'sibasa': { lat: -22.9667, lng: 30.4667, display: 'Sibasa, Limpopo' },
     'dendron': { lat: -23.3667, lng: 29.3167, display: 'Dendron, Limpopo' },
     'malamulele': { lat: -22.9833, lng: 30.7000, display: 'Malamulele, Limpopo' },
-    // Gauteng
-    'soweto': { lat: -26.2485, lng: 27.8580, display: 'Soweto, Gauteng' },
-    'tembisa': { lat: -25.9833, lng: 28.2167, display: 'Tembisa, Gauteng' },
-    'alexandra': { lat: -26.1064, lng: 28.0978, display: 'Alexandra, Gauteng' },
+    'lepelle-nkumpi': { lat: -24.0000, lng: 29.0000, display: 'Lepelle-Nkumpi, Limpopo' },
+    'waterberg': { lat: -24.0000, lng: 28.0000, display: 'Waterberg, Limpopo' },
+    'blouberg': { lat: -23.0000, lng: 29.0000, display: 'Blouberg, Limpopo' },
+    'venda': { lat: -22.9000, lng: 30.4000, display: 'Venda, Limpopo' },
+    'ga-rankuwa': { lat: -24.5000, lng: 28.0000, display: 'Ga-Rankuwa, Limpopo' },
+    'hammanskraal': { lat: -25.4000, lng: 28.2833, display: 'Hammanskraal, Limpopo' },
+    'warmbaths': { lat: -24.8833, lng: 28.2833, display: 'Warmbaths, Limpopo' },
+    'nylstroom': { lat: -24.7000, lng: 28.4000, display: 'Nylstroom, Limpopo' },
+    'potgietersrus': { lat: -24.1667, lng: 29.0000, display: 'Potgietersrus, Limpopo' },
+    
+    // Gauteng Suburbs
+    'rosebank': { lat: -26.1468, lng: 28.0362, display: 'Rosebank, Johannesburg, Gauteng' },
+    'sunninghill': { lat: -26.0349, lng: 28.0615, display: 'Sunninghill, Johannesburg, Gauteng' },
+    'fourways': { lat: -26.0148, lng: 28.0103, display: 'Fourways, Johannesburg, Gauteng' },
+    'bryanston': { lat: -26.0503, lng: 28.0195, display: 'Bryanston, Johannesburg, Gauteng' },
+    'parktown': { lat: -26.1784, lng: 28.0411, display: 'Parktown, Johannesburg, Gauteng' },
+    'braamfontein': { lat: -26.1958, lng: 28.0425, display: 'Braamfontein, Johannesburg, Gauteng' },
+    'melville': { lat: -26.1759, lng: 28.0086, display: 'Melville, Johannesburg, Gauteng' },
+    'soweto (diepkloof)': { lat: -26.2550, lng: 27.9000, display: 'Diepkloof, Soweto, Gauteng' },
+    'soweto (dobsonville)': { lat: -26.2333, lng: 27.8500, display: 'Dobsonville, Soweto, Gauteng' },
+    'soweto (mofolo)': { lat: -26.2667, lng: 27.8833, display: 'Mofolo, Soweto, Gauteng' },
+    'soweto (orlando)': { lat: -26.2333, lng: 27.9167, display: 'Orlando, Soweto, Gauteng' },
+    'soweto (pimville)': { lat: -26.2833, lng: 27.9000, display: 'Pimville, Soweto, Gauteng' },
+    
     // Mpumalanga
     'nelspruit': { lat: -25.4667, lng: 30.9833, display: 'Nelspruit, Mpumalanga' },
     'witbank': { lat: -25.8667, lng: 29.2333, display: 'Witbank, Mpumalanga' },
+    'middelburg': { lat: -25.7667, lng: 29.4667, display: 'Middelburg, Mpumalanga' },
+    
     // North West
     'rustenburg': { lat: -25.6667, lng: 27.2500, display: 'Rustenburg, North West' },
     'mahlkeng': { lat: -25.8667, lng: 25.6333, display: 'Mahlkeng, North West' },
+    'potchefstroom': { lat: -26.7167, lng: 27.1000, display: 'Potchefstroom, North West' },
+    
     // KwaZulu-Natal
     'durban': { lat: -29.8833, lng: 31.0500, display: 'Durban, KwaZulu-Natal' },
     'pietermaritzburg': { lat: -29.6000, lng: 30.3833, display: 'Pietermaritzburg, KwaZulu-Natal' },
     'richards bay': { lat: -28.8000, lng: 32.0833, display: 'Richards Bay, KwaZulu-Natal' },
+    'newcastle': { lat: -27.7500, lng: 29.9333, display: 'Newcastle, KwaZulu-Natal' },
+    
     // Western Cape
     'cape town': { lat: -33.9253, lng: 18.4239, display: 'Cape Town, Western Cape' },
     'stellenbosch': { lat: -33.9333, lng: 18.8500, display: 'Stellenbosch, Western Cape' },
+    'paarl': { lat: -33.7333, lng: 18.9667, display: 'Paarl, Western Cape' },
+    
     // Eastern Cape
     'port elizabeth': { lat: -33.9667, lng: 25.5833, display: 'Port Elizabeth, Eastern Cape' },
     'east london': { lat: -32.9833, lng: 27.8667, display: 'East London, Eastern Cape' },
+    'grahamstown': { lat: -33.3000, lng: 26.5333, display: 'Grahamstown, Eastern Cape' },
+    
     // Free State
     'bloemfontein': { lat: -29.1167, lng: 26.2167, display: 'Bloemfontein, Free State' },
     'welkom': { lat: -27.9833, lng: 26.7333, display: 'Welkom, Free State' },
+    'bethlehem': { lat: -28.2333, lng: 28.3167, display: 'Bethlehem, Free State' },
+    
     // Northern Cape
     'kimberley': { lat: -28.7333, lng: 24.7667, display: 'Kimberley, Northern Cape' },
     'upington': { lat: -28.4000, lng: 21.2500, display: 'Upington, Northern Cape' }
@@ -235,8 +268,7 @@ function initMap() {
         unit: 'metric'
     }), 'bottom-left');
 
-    map.on('load', function() {});
-
+    // Click on map to set location
     map.on('click', function(e) {
         var lng = e.lngLat.lng;
         var lat = e.lngLat.lat;
@@ -256,13 +288,6 @@ function initMap() {
 
     setupAutocomplete('pickup');
     setupAutocomplete('dropoff');
-
-    document.getElementById('pickupFindBtn').onclick = function() {
-        findAddress('pickup');
-    };
-    document.getElementById('dropoffFindBtn').onclick = function() {
-        findAddress('dropoff');
-    };
 
     document.getElementById('pickupSearch').addEventListener('keydown', function(e) {
         if (e.key === 'Enter') {
@@ -287,7 +312,7 @@ function initMap() {
 }
 
 /* =====================================================================
-   IMPROVED ADDRESS SEARCH WITH SOUTH AFRICA FOCUS
+   IMPROVED ADDRESS SEARCH - Works like Bolt/Uber
    ===================================================================== */
 function setupAutocomplete(type) {
     var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
@@ -321,197 +346,192 @@ function setupAutocomplete(type) {
 function searchAddressSA(query, type) {
     var resultsId = type === 'pickup' ? 'pickupAutocomplete' : 'dropoffAutocomplete';
     var resultsContainer = document.getElementById(resultsId);
-    var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
-    var input = document.getElementById(inputId);
+    var input = document.getElementById(type === 'pickup' ? 'pickupSearch' : 'dropoffSearch');
 
     resultsContainer.innerHTML = '<div class="searching-indicator">🔍 Searching...</div>';
     resultsContainer.classList.add('active');
 
     var allResults = [];
     var lowerQuery = query.toLowerCase();
-    var providersCompleted = 0;
-    var totalProviders = GEOCODING_PROVIDERS.length;
 
-    // 1. First check local SA towns database for quick matches
-    var localMatches = [];
-    for (var town in SA_TOWNS) {
-        if (town.includes(lowerQuery) || lowerQuery.includes(town)) {
-            localMatches.push({
-                lat: SA_TOWNS[town].lat,
-                lng: SA_TOWNS[town].lng,
-                address: SA_TOWNS[town].display,
-                mainText: SA_TOWNS[town].display.split(',')[0] || town,
-                subText: SA_TOWNS[town].display,
-                typeLabel: '🏘️',
+    // 1. Check local locations database first (instant results)
+    for (var location in SA_LOCATIONS) {
+        if (location.includes(lowerQuery) || lowerQuery.includes(location)) {
+            var loc = SA_LOCATIONS[location];
+            // Check if this is for Gauteng or Limpopo (preferred)
+            var isGauteng = loc.display.includes('Gauteng');
+            var isLimpopo = loc.display.includes('Limpopo');
+            var priority = isGauteng || isLimpopo ? 1 : 2;
+            
+            // Try to match the full address or street
+            var mainText = loc.display;
+            var subText = '';
+            
+            allResults.push({
+                lat: loc.lat,
+                lng: loc.lng,
+                address: loc.display,
+                mainText: loc.display,
+                subText: subText,
+                icon: '📍',
+                priority: priority,
                 source: 'local'
             });
         }
     }
 
-    // Add local matches to results
-    for (var i = 0; i < localMatches.length; i++) {
-        allResults.push(localMatches[i]);
-    }
-
-    // 2. Try multiple geocoding providers in parallel
-    for (var p = 0; p < totalProviders; p++) {
-        var provider = GEOCODING_PROVIDERS[p];
-        var url = provider.url + encodeURIComponent(query + ', South Africa') + provider.params;
-
-        fetch(url)
-            .then(function(response) {
-                if (!response.ok) throw new Error('Network error');
-                return response.json();
-            })
-            .then(function(data) {
-                providersCompleted++;
-                if (data && data.length > 0) {
-                    var processed = processGeocodeResultsSA(data, provider.name);
-                    for (var j = 0; j < processed.length; j++) {
-                        allResults.push(processed[j]);
-                    }
+    // 2. Try Nominatim (for specific addresses and streets)
+    var nominatimUrl = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ', South Africa') + '&countrycodes=za&limit=8&addressdetails=1&extratags=1&namedetails=1';
+    
+    fetch(nominatimUrl)
+        .then(function(response) {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(function(data) {
+            if (data && data.length > 0) {
+                for (var i = 0; i < data.length; i++) {
+                    var item = data[i];
+                    var lat = parseFloat(item.lat);
+                    var lng = parseFloat(item.lon);
+                    var displayName = item.display_name;
+                    
+                    // Check if in Gauteng or Limpopo
+                    var isGauteng = displayName.includes('Gauteng');
+                    var isLimpopo = displayName.includes('Limpopo');
+                    var priority = isGauteng || isLimpopo ? 1 : 2;
+                    
+                    var mainText = item.name || displayName.split(',')[0] || 'Unknown';
+                    var subText = displayName.replace(mainText, '').trim().replace(/^,/, '').trim() || 'South Africa';
+                    
+                    // Get icon
+                    var icon = '📍';
+                    if (item.type === 'house' || item.type === 'building') icon = '🏠';
+                    else if (item.type === 'road') icon = '🛣️';
+                    else if (item.type === 'city') icon = '🏙️';
+                    else if (item.type === 'town' || item.type === 'village') icon = '🏘️';
+                    else if (item.type === 'suburb') icon = '🏠';
+                    
+                    allResults.push({
+                        lat: lat,
+                        lng: lng,
+                        address: displayName,
+                        mainText: mainText,
+                        subText: subText,
+                        icon: icon,
+                        priority: priority,
+                        source: 'nominatim'
+                    });
                 }
-                
-                if (providersCompleted >= totalProviders || allResults.length >= 15) {
-                    renderAutocompleteResultsSA(allResults, type);
-                }
-            })
-            .catch(function() {
-                providersCompleted++;
-                if (providersCompleted >= totalProviders) {
-                    if (allResults.length === 0) {
-                        resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different address.</div>';
-                    } else {
-                        renderAutocompleteResultsSA(allResults, type);
-                    }
-                }
-            });
-    }
+            }
+            
+            // Render results after both sources
+            renderAutocompleteResultsSA(allResults, type);
+        })
+        .catch(function() {
+            // If Nominatim fails, render local results only
+            renderAutocompleteResultsSA(allResults, type);
+        });
 
-    // Safety timeout
+    // 3. Try Photon as additional fallback
+    var photonUrl = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query + ', South Africa') + '&limit=5&lang=en&bbox=16.5,-33.5,33.5,-22.5';
+    
+    fetch(photonUrl)
+        .then(function(response) {
+            if (!response.ok) throw new Error('Network error');
+            return response.json();
+        })
+        .then(function(data) {
+            if (data && data.features && data.features.length > 0) {
+                for (var j = 0; j < data.features.length; j++) {
+                    var feature = data.features[j];
+                    var lat = feature.geometry.coordinates[1];
+                    var lng = feature.geometry.coordinates[0];
+                    var displayName = feature.properties.name || feature.properties.street || '';
+                    var city = feature.properties.city || feature.properties.town || feature.properties.village || '';
+                    
+                    var isGauteng = city.includes('Gauteng') || displayName.includes('Gauteng');
+                    var isLimpopo = city.includes('Limpopo') || displayName.includes('Limpopo');
+                    var priority = isGauteng || isLimpopo ? 1 : 2;
+                    
+                    var mainText = displayName || 'Unknown';
+                    var subText = city ? city + ', South Africa' : 'South Africa';
+                    
+                    var icon = '📍';
+                    if (feature.properties.osm_value === 'house' || feature.properties.osm_value === 'building') icon = '🏠';
+                    else if (feature.properties.osm_value === 'road') icon = '🛣️';
+                    else if (feature.properties.osm_value === 'city') icon = '🏙️';
+                    else if (feature.properties.osm_value === 'town' || feature.properties.osm_value === 'village') icon = '🏘️';
+                    else if (feature.properties.osm_value === 'suburb') icon = '🏠';
+                    
+                    allResults.push({
+                        lat: lat,
+                        lng: lng,
+                        address: displayName + ', ' + subText,
+                        mainText: mainText,
+                        subText: subText,
+                        icon: icon,
+                        priority: priority,
+                        source: 'photon'
+                    });
+                }
+            }
+            renderAutocompleteResultsSA(allResults, type);
+        })
+        .catch(function() {
+            // Photon failed, render what we have
+            renderAutocompleteResultsSA(allResults, type);
+        });
+
+    // Safety timeout - render after 5 seconds even if not all providers responded
     setTimeout(function() {
-        if (providersCompleted < totalProviders) {
-            providersCompleted = totalProviders;
-            if (allResults.length === 0) {
-                resultsContainer.innerHTML = '<div class="searching-indicator">Search timed out. Please try again.</div>';
-            } else {
-                renderAutocompleteResultsSA(allResults, type);
-            }
+        if (allResults.length > 0) {
+            renderAutocompleteResultsSA(allResults, type);
+        } else {
+            resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different address.</div>';
         }
-    }, 10000);
-}
-
-function processGeocodeResultsSA(data, provider) {
-    var results = [];
-    
-    for (var i = 0; i < data.length; i++) {
-        var item = data[i];
-        var lat, lng, displayName, mainText, subText, typeLabel;
-        
-        if (provider === 'Nominatim' || provider === 'OSM_ZA') {
-            lat = parseFloat(item.lat);
-            lng = parseFloat(item.lon);
-            displayName = item.display_name;
-            mainText = item.name || item.display_name.split(',')[0] || 'Unknown';
-            subText = displayName.replace(mainText, '').trim().replace(/^,/, '').trim() || 'South Africa';
-            
-            if (item.extratags && item.extratags.place) {
-                if (item.extratags.place === 'city') typeLabel = '🏙️';
-                else if (item.extratags.place === 'town') typeLabel = '🏘️';
-                else if (item.extratags.place === 'village') typeLabel = '🏘️';
-                else if (item.extratags.place === 'suburb') typeLabel = '🏠';
-                else if (item.extratags.place === 'hamlet') typeLabel = '🏡';
-                else typeLabel = '📍';
-            } else if (item.type) {
-                if (item.type === 'city') typeLabel = '🏙️';
-                else if (item.type === 'town') typeLabel = '🏘️';
-                else if (item.type === 'village') typeLabel = '🏘️';
-                else if (item.type === 'suburb') typeLabel = '🏠';
-                else if (item.type === 'hamlet') typeLabel = '🏡';
-                else if (item.type === 'road') typeLabel = '🛣️';
-                else typeLabel = '📍';
-            } else {
-                typeLabel = '📍';
-            }
-        } else if (provider === 'Photon') {
-            var coords = item.geometry.coordinates;
-            lat = coords[1];
-            lng = coords[0];
-            mainText = item.properties.name || item.properties.street || '';
-            var context = item.properties.city || item.properties.town || item.properties.village || item.properties.state || '';
-            subText = context ? context + ', South Africa' : 'South Africa';
-            displayName = mainText + ', ' + subText;
-            
-            if (item.properties.osm_value) {
-                if (item.properties.osm_value === 'city') typeLabel = '🏙️';
-                else if (item.properties.osm_value === 'town') typeLabel = '🏘️';
-                else if (item.properties.osm_value === 'village') typeLabel = '🏘️';
-                else if (item.properties.osm_value === 'suburb') typeLabel = '🏠';
-                else if (item.properties.osm_value === 'hamlet') typeLabel = '🏡';
-                else typeLabel = '📍';
-            } else {
-                typeLabel = '📍';
-            }
-        }
-        
-        if (isNaN(lat) || isNaN(lng)) continue;
-        
-        // Check if this result is already in the list (avoid duplicates)
-        var isDuplicate = false;
-        for (var r = 0; r < results.length; r++) {
-            if (Math.abs(results[r].lat - lat) < 0.001 && Math.abs(results[r].lng - lng) < 0.001) {
-                isDuplicate = true;
-                break;
-            }
-        }
-        
-        if (!isDuplicate) {
-            results.push({
-                lat: lat,
-                lng: lng,
-                address: displayName || mainText + ', ' + subText,
-                mainText: mainText,
-                subText: subText,
-                typeLabel: typeLabel || '📍',
-                source: provider
-            });
-        }
-    }
-    
-    return results;
+    }, 5000);
 }
 
 function renderAutocompleteResultsSA(results, type) {
     var resultsId = type === 'pickup' ? 'pickupAutocomplete' : 'dropoffAutocomplete';
     var resultsContainer = document.getElementById(resultsId);
-    var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
-    var input = document.getElementById(inputId);
 
     if (results.length === 0) {
         resultsContainer.innerHTML = '<div class="searching-indicator">No results found. Try a different address.</div>';
         return;
     }
 
-    // Sort results: local matches first, then by relevance
-    results.sort(function(a, b) {
+    // Remove duplicates based on lat/lng
+    var uniqueResults = [];
+    var seen = {};
+    for (var i = 0; i < results.length; i++) {
+        var key = results[i].lat + ',' + results[i].lng;
+        if (!seen[key]) {
+            seen[key] = true;
+            uniqueResults.push(results[i]);
+        }
+    }
+
+    // Sort by priority (Gauteng/Limpopo first, then local matches first)
+    uniqueResults.sort(function(a, b) {
+        if (a.priority !== b.priority) return a.priority - b.priority;
         if (a.source === 'local' && b.source !== 'local') return -1;
         if (a.source !== 'local' && b.source === 'local') return 1;
         return 0;
     });
 
     // Limit to 12 results
-    var displayResults = results.slice(0, 12);
+    var displayResults = uniqueResults.slice(0, 12);
 
     var html = '';
     for (var j = 0; j < displayResults.length; j++) {
         var result = displayResults[j];
         var address = result.address.replace(/"/g, '&quot;');
+        var sourceBadge = result.source === 'local' ? ' <span style="font-size:0.65rem; color:var(--success);">✓</span>' : '';
         html += '<div class="autocomplete-item" data-lat="' + result.lat + '" data-lng="' + result.lng + '" data-address="' + address + '">';
-        html += '<span class="main-text">' + result.typeLabel + ' ' + result.mainText + '</span>';
-        html += '<span class="sub-text">' + result.subText + '</span>';
-        if (result.source === 'local') {
-            html += ' <span style="font-size:0.7rem; color:var(--success);">✓</span>';
-        }
+        html += '<span class="icon">' + (result.icon || '📍') + '</span>';
+        html += '<div class="main-text">' + result.mainText + sourceBadge + '<span class="sub-text">' + result.subText + '</span></div>';
         html += '</div>';
     }
 
@@ -525,6 +545,7 @@ function renderAutocompleteResultsSA(results, type) {
             var address = this.dataset.address;
             var coords = { lat: lat, lng: lng };
 
+            var input = document.getElementById(type === 'pickup' ? 'pickupSearch' : 'dropoffSearch');
             input.value = address;
             setLocation(type, coords, address);
             resultsContainer.classList.remove('active');
@@ -532,7 +553,7 @@ function renderAutocompleteResultsSA(results, type) {
 
             BookingState.map.flyTo({
                 center: [lng, lat],
-                zoom: 13,
+                zoom: 14,
                 duration: 1000
             });
         });
@@ -540,8 +561,7 @@ function renderAutocompleteResultsSA(results, type) {
 }
 
 function findAddress(type) {
-    var inputId = type === 'pickup' ? 'pickupSearch' : 'dropoffSearch';
-    var input = document.getElementById(inputId);
+    var input = document.getElementById(type === 'pickup' ? 'pickupSearch' : 'dropoffSearch');
     var query = input.value.trim();
 
     if (!query) {
@@ -549,29 +569,9 @@ function findAddress(type) {
         return;
     }
 
-    var btnId = type === 'pickup' ? 'pickupFindBtn' : 'dropoffFindBtn';
-    var btn = document.getElementById(btnId);
-    btn.textContent = '...';
-    btn.disabled = true;
+    showToast('Searching for address...', 'info');
 
-    // First check local database
-    var lowerQuery = query.toLowerCase();
-    for (var town in SA_TOWNS) {
-        if (town.includes(lowerQuery) || lowerQuery.includes(town)) {
-            var coords = { lat: SA_TOWNS[town].lat, lng: SA_TOWNS[town].lng };
-            setLocation(type, coords, SA_TOWNS[town].display);
-            BookingState.map.flyTo({
-                center: [coords.lng, coords.lat],
-                zoom: 13,
-                duration: 1000
-            });
-            btn.textContent = 'Find';
-            btn.disabled = false;
-            return;
-        }
-    }
-
-    // Try Nominatim
+    // Try to find the address
     var url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ', South Africa') + '&countrycodes=za&limit=1&addressdetails=1';
     
     fetch(url)
@@ -590,48 +590,16 @@ function findAddress(type) {
                 setLocation(type, coords, address);
                 BookingState.map.flyTo({
                     center: [lng, lat],
-                    zoom: 13,
+                    zoom: 14,
                     duration: 1000
                 });
-                btn.textContent = 'Find';
-                btn.disabled = false;
-                return;
-            }
-            
-            // Try Photon as fallback
-            var photonUrl = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(query + ', South Africa') + '&limit=1&lang=en';
-            return fetch(photonUrl);
-        })
-        .then(function(response) {
-            if (response && response.ok) {
-                return response.json();
-            }
-            throw new Error('No results');
-        })
-        .then(function(data) {
-            if (data && data.features && data.features.length > 0) {
-                var result = data.features[0];
-                var lat = result.geometry.coordinates[1];
-                var lng = result.geometry.coordinates[0];
-                var address = result.properties.name || result.properties.street || query;
-                var coords = { lat: lat, lng: lng };
-
-                setLocation(type, coords, address);
-                BookingState.map.flyTo({
-                    center: [lng, lat],
-                    zoom: 13,
-                    duration: 1000
-                });
+                showToast('Location found!', 'success');
             } else {
-                showToast('Could not find that address. Please try again or click on the map.', 'error');
+                showToast('Could not find that address. Please try clicking on the map.', 'error');
             }
-            btn.textContent = 'Find';
-            btn.disabled = false;
         })
         .catch(function() {
-            btn.textContent = 'Find';
-            btn.disabled = false;
-            showToast('Could not find that address. Please try clicking on the map.', 'error');
+            showToast('Error searching. Please try clicking on the map.', 'error');
         });
 }
 
@@ -669,7 +637,7 @@ function useCurrentLocation() {
             setLocation('pickup', coords, address || 'Current Location');
             BookingState.map.flyTo({
                 center: [lng, lat],
-                zoom: 14,
+                zoom: 15,
                 duration: 1000
             });
             showToast('Location set successfully!', 'success');
@@ -761,7 +729,7 @@ function setLocation(type, coords, address) {
         map.fitBounds(bounds, { padding: 50, duration: 1000 });
         calculatePrice();
     } else if (BookingState.pickupMarker) {
-        map.flyTo({ center: [lng, lat], zoom: 12, duration: 1000 });
+        map.flyTo({ center: [lng, lat], zoom: 14, duration: 1000 });
     }
 }
 
