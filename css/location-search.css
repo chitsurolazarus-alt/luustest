@@ -1,1 +1,395 @@
+/* =====================================================================
+   LUU TRAVELS & LOGISTICS - LOCATION SEARCH STYLES
+   ===================================================================== */
 
+.address-search {
+    position: relative;
+    padding: 12px 16px;
+    background: var(--gray-100);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.address-search-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.address-search-row:last-child {
+    margin-bottom: 0;
+}
+
+.address-search-row .address-dot {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 0 0 2px var(--gray-300);
+    flex-shrink: 0;
+}
+
+.address-search-row .address-dot-green {
+    background: var(--success);
+}
+
+.address-search-row .address-dot-red {
+    background: var(--danger);
+}
+
+.address-search-row input {
+    flex: 1;
+    padding: 12px 14px 12px 38px;
+    border: 1.5px solid var(--gray-200);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    background: var(--secondary);
+    min-height: 48px;
+    width: 100%;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.address-search-row input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.15);
+}
+
+.address-search-row input::placeholder {
+    color: var(--gray-400);
+}
+
+.address-search-row .btn {
+    flex-shrink: 0;
+    min-height: 48px;
+    padding: 0 20px;
+}
+
+/* Autocomplete Results */
+.autocomplete-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--secondary);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    max-height: 280px;
+    overflow-y: auto;
+    z-index: 1000;
+    margin-top: 2px;
+    border: 1px solid var(--gray-200);
+    border-top: none;
+    display: none;
+}
+
+.autocomplete-results.active {
+    display: block;
+}
+
+.search-result-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--gray-100);
+    transition: background 0.15s ease;
+}
+
+.search-result-item:hover {
+    background: var(--gray-100);
+}
+
+.search-result-item.active {
+    background: var(--gray-100);
+}
+
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item .result-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    width: 24px;
+    text-align: center;
+}
+
+.search-result-item .result-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.search-result-item .result-main {
+    font-weight: 500;
+    color: var(--dark-text);
+    font-size: 0.92rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.search-result-item .result-sub {
+    font-size: 0.78rem;
+    color: var(--gray-600);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+
+.searching-indicator {
+    padding: 14px 16px;
+    color: var(--gray-600);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Map Controls */
+.map-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.map-controls .btn {
+    flex: 1;
+    min-height: 44px;
+}
+
+.location-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    transition: background 0.2s ease;
+}
+
+.location-btn:hover {
+    background: var(--primary-light);
+}
+
+.location-btn:active {
+    transform: scale(0.98);
+}
+
+/* Custom Markers */
+.custom-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50% 50% 50% 0;
+    border: 3px solid white;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: white;
+    transform: rotate(-45deg);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.custom-marker:hover {
+    transform: rotate(-45deg) scale(1.1);
+}
+
+.custom-marker-pickup {
+    background: var(--success);
+}
+
+.custom-marker-dropoff {
+    background: var(--danger);
+}
+
+.custom-marker span {
+    transform: rotate(45deg);
+}
+
+/* Map Info Bar */
+.map-info-bar {
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 20px;
+    background: var(--secondary);
+    border-top: 1px solid var(--gray-200);
+}
+
+.map-info-bar .info-item {
+    text-align: center;
+    flex: 1;
+}
+
+.map-info-bar .info-label {
+    font-size: 0.7rem;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.map-info-bar .info-value {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--primary);
+    font-size: 1.05rem;
+    margin-top: 2px;
+}
+
+.map-info-bar .info-value .duration {
+    font-size: 0.8rem;
+    font-weight: 400;
+    color: var(--gray-600);
+}
+
+/* Map Container */
+#booking-map {
+    height: 420px;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--gray-100);
+}
+
+#booking-map .maplibregl-map {
+    border-radius: 8px;
+}
+
+/* Map Instruction */
+.map-instruction {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    z-index: 10;
+    display: none;
+    white-space: nowrap;
+}
+
+.map-instruction.show {
+    display: block;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .address-search {
+        padding: 10px 12px;
+    }
+
+    .address-search-row {
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+    }
+
+    .address-search-row input {
+        min-height: 44px;
+        font-size: 0.9rem;
+        padding: 10px 12px 10px 36px;
+    }
+
+    .address-search-row .btn {
+        min-height: 44px;
+        font-size: 0.85rem;
+        padding: 0 14px;
+    }
+
+    .address-search-row .address-dot {
+        width: 10px;
+        height: 10px;
+        left: 12px;
+    }
+
+    #booking-map {
+        height: 300px;
+    }
+
+    .autocomplete-results {
+        max-height: 200px;
+    }
+
+    .search-result-item {
+        padding: 8px 12px;
+    }
+
+    .search-result-item .result-main {
+        font-size: 0.85rem;
+    }
+
+    .search-result-item .result-sub {
+        font-size: 0.72rem;
+    }
+
+    .map-info-bar {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .map-info-bar .info-item {
+        min-width: 60px;
+    }
+
+    .map-info-bar .info-value {
+        font-size: 0.9rem;
+    }
+
+    .map-controls {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .location-btn {
+        min-height: 44px;
+        font-size: 0.85rem;
+    }
+}
+
+/* Tablet */
+@media (min-width: 769px) and (max-width: 1024px) {
+    #booking-map {
+        height: 350px;
+    }
+
+    .address-search-row input {
+        min-height: 44px;
+    }
+
+    .address-search-row .btn {
+        min-height: 44px;
+    }
+}
+
+/* Touch friendly */
+@media (pointer: coarse) {
+    .search-result-item {
+        padding: 12px 14px;
+        min-height: 44px;
+    }
+
+    .address-search-row input {
+        font-size: 16px; /* Prevents iOS zoom */
+    }
+}
