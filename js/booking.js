@@ -21,13 +21,12 @@ var BookingState = {
     map: null,
     pickupMarker: null,
     dropoffMarker: null,
-    directionRenderer: null,
-    autocompletePickup: null,
-    autocompleteDropoff: null
+    routeLine: null,
+    pickupGeocoder: null,
+    dropoffGeocoder: null
 };
 
 var WHATSAPP_NUMBER = '27768457061';
-var googleMapsLoaded = false;
 
 document.addEventListener('DOMContentLoaded', async function() {
     var user = await AuthManager.requireAuth('login.html');
@@ -40,6 +39,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupBookingTypeButtons();
     setupPromoHandler();
     await loadTimeSlots();
+    initMap();
 });
 
 /* =====================================================================
@@ -119,73 +119,45 @@ function setupMobileMenu() {
 }
 
 /* =====================================================================
-   GOOGLE MAPS INITIALIZATION
+   MAP INITIALIZATION
    ===================================================================== */
 function initMap() {
-    googleMapsLoaded = true;
-    
     // Default center: Gauteng, South Africa
-    var defaultCenter = { lat: -26.2041, lng: 28.0473 };
+    var defaultCenter = [-26.2041, 28.0473];
     
-    BookingState.map = new google.maps.Map(document.getElementById('google-map'), {
-        center: defaultCenter,
-        zoom: 7,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: true,
-        zoomControl: true,
-        styles: [
-            {
-                featureType: 'poi',
-                elementType: 'labels',
-                stylers: [{ visibility: 'off' }]
-            }
-        ]
-    });
+    BookingState.map = L.map('booking-map').setView(defaultCenter, 7);
+    
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(BookingState.map);
 
-    // Setup autocomplete for pickup
-    var pickupInput = document.getElementById('pickupSearch');
-    BookingState.autocompletePickup = new google.maps.places.Autocomplete(pickupInput, {
-        types: ['address'],
-        componentRestrictions: { country: 'za' },
-        fields: ['place_id', 'formatted_address', 'geometry', 'name']
-    });
-    BookingState.autocompletePickup.addListener('place_changed', function() {
-        onPlaceSelected('pickup');
-    });
-
-    // Setup autocomplete for dropoff
-    var dropoffInput = document.getElementById('dropoffSearch');
-    BookingState.autocompleteDropoff = new google.maps.places.Autocomplete(dropoffInput, {
-        types: ['address'],
-        componentRestrictions: { country: 'za' },
-        fields: ['place_id', 'formatted_address', 'geometry', 'name']
-    });
-    BookingState.autocompleteDropoff.addListener('place_changed', function() {
-        onPlaceSelected('dropoff');
-    });
+    // Setup pickup geocoder
+    setupGeocoder('pickup');
+    setupGeocoder('dropoff');
 
     // Setup current location button
     document.getElementById('useCurrentLocationBtn').onclick = function() {
         if (navigator.geolocation) {
+            showToast('Getting your location...', 'info');
             navigator.geolocation.getCurrentPosition(function(position) {
-                var pos = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                BookingState.map.setCenter(pos);
-                BookingState.map.setZoom(15);
+                var lat = position.coords.latitude;
+                var lng = position.coords.longitude;
+                var coords = { lat: lat, lng: lng };
                 
                 // Reverse geocode to get address
-                var geocoder = new google.maps.Geocoder();
-                geocoder.geocode({ location: pos }, function(results, status) {
-                    if (status === 'OK' && results[0]) {
-                        document.getElementById('pickupSearch').value = results[0].formatted_address;
-                        setLocation('pickup', pos, results[0].formatted_address);
-                    } else {
-                        setLocation('pickup', pos, 'Current Location');
-                    }
-                });
+                fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1')
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        var address = data.display_name || 'Current Location';
+                        setLocation('pickup', coords, address);
+                        BookingState.map.setView([lat, lng], 14);
+                    })
+                    .catch(function() {
+                        setLocation('pickup', coords, 'Current Location');
+                        BookingState.map.setView([lat, lng], 14);
+                    });
             }, function() {
                 showToast('Could not get your location. Please allow location access.', 'error');
             });
@@ -194,156 +166,275 @@ function initMap() {
         }
     };
 
-    // Handle enter key on inputs
-    pickupInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            var place = BookingState.autocompletePickup.getPlace();
-            if (place && place.geometry) {
-                onPlaceSelected('pickup');
-            }
-        }
-    });
-    
-    dropoffInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            var place = BookingState.autocompleteDropoff.getPlace();
-            if (place && place.geometry) {
-                onPlaceSelected('dropoff');
-            }
-        }
+    // Click on map to set location
+    BookingState.map.on('click', function(e) {
+        var lat = e.latlng.lat;
+        var lng = e.latlng.lng;
+        var coords = { lat: lat, lng: lng };
+        
+        // Reverse geocode
+        fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat + '&lon=' + lng + '&zoom=18&addressdetails=1')
+            .then(function(response) { return response.json(); })
+            .then(function(data) {
+                var address = data.display_name || 'Selected Location';
+                if (!BookingState.pickupMarker || (BookingState.pickupMarker && BookingState.dropoffMarker)) {
+                    setLocation('pickup', coords, address);
+                } else if (BookingState.pickupMarker && !BookingState.dropoffMarker) {
+                    setLocation('dropoff', coords, address);
+                } else {
+                    clearAllLocations();
+                    setLocation('pickup', coords, address);
+                }
+            })
+            .catch(function() {
+                if (!BookingState.pickupMarker || (BookingState.pickupMarker && BookingState.dropoffMarker)) {
+                    setLocation('pickup', coords, 'Selected Location');
+                } else if (BookingState.pickupMarker && !BookingState.dropoffMarker) {
+                    setLocation('dropoff', coords, 'Selected Location');
+                } else {
+                    clearAllLocations();
+                    setLocation('pickup', coords, 'Selected Location');
+                }
+            });
     });
 
     // Clear button
     document.getElementById('clearMapBtn').onclick = function() {
         clearAllLocations();
     };
-
-    // Click on map to set location
-    BookingState.map.addListener('click', function(e) {
-        var lat = e.latLng.lat();
-        var lng = e.latLng.lng();
-        var pos = { lat: lat, lng: lng };
-        
-        var geocoder = new google.maps.Geocoder();
-        geocoder.geocode({ location: pos }, function(results, status) {
-            var address = (status === 'OK' && results[0]) ? results[0].formatted_address : 'Selected Location';
-            
-            if (!BookingState.pickupMarker || (BookingState.pickupMarker && BookingState.dropoffMarker)) {
-                setLocation('pickup', pos, address);
-            } else if (BookingState.pickupMarker && !BookingState.dropoffMarker) {
-                setLocation('dropoff', pos, address);
-            } else {
-                clearAllLocations();
-                setLocation('pickup', pos, address);
-            }
-        });
-    });
 }
 
-function onPlaceSelected(type) {
-    var autocomplete = type === 'pickup' ? BookingState.autocompletePickup : BookingState.autocompleteDropoff;
-    var place = autocomplete.getPlace();
+function setupGeocoder(type) {
+    var containerId = type === 'pickup' ? 'pickupGeocoder' : 'dropoffGeocoder';
+    var container = document.getElementById(containerId);
     
-    if (!place || !place.geometry) {
-        showToast('Please select an address from the suggestions.', 'error');
-        return;
+    var geocoder = L.Control.Geocoder.nominatim({
+        geocodingQueryParams: {
+            countrycodes: 'za',
+            limit: 10
+        }
+    });
+    
+    // Create a custom control
+    var control = L.Control.geocoder({
+        geocoder: geocoder,
+        placeholder: type === 'pickup' ? 'Type your pickup address...' : 'Type your drop-off address...',
+        defaultMarkGeocode: false,
+        position: 'topleft',
+        collapsed: false
+    });
+    
+    // Override the addTo method to add to the container instead of the map
+    var originalAddTo = control.addTo;
+    control.addTo = function(map) {
+        this._map = map;
+        this._container = this._container || this.onAdd(map);
+        container.appendChild(this._container);
+        return this;
+    };
+    
+    // Handle geocode result
+    var originalGeocode = control._geocode;
+    control._geocode = function() {
+        var query = this._input.value.trim();
+        if (!query) return;
+        
+        // Show loading state
+        this._input.placeholder = 'Searching...';
+        
+        var geocoder = this._geocoder;
+        var resultsContainer = this._results;
+        
+        // Clear previous results
+        while (resultsContainer.firstChild) {
+            resultsContainer.removeChild(resultsContainer.firstChild);
+        }
+        
+        geocoder.geocode(query, function(results) {
+            // Reset placeholder
+            control._input.placeholder = control.options.placeholder;
+            
+            if (results.length === 0) {
+                var noResults = document.createElement('div');
+                noResults.className = 'leaflet-control-geocoder-no-results';
+                noResults.textContent = 'No results found. Try a different address.';
+                resultsContainer.appendChild(noResults);
+                return;
+            }
+            
+            for (var i = 0; i < results.length; i++) {
+                var result = results[i];
+                var link = document.createElement('a');
+                link.textContent = result.name;
+                link.href = '#';
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var lat = result.center.lat;
+                    var lng = result.center.lng;
+                    var address = result.name;
+                    var coords = { lat: lat, lng: lng };
+                    
+                    if (type === 'pickup') {
+                        setLocation('pickup', coords, address);
+                    } else {
+                        setLocation('dropoff', coords, address);
+                    }
+                    
+                    // Clear results
+                    while (resultsContainer.firstChild) {
+                        resultsContainer.removeChild(resultsContainer.firstChild);
+                    }
+                    
+                    // Hide results container
+                    resultsContainer.style.display = 'none';
+                    
+                    // Pan map to location
+                    BookingState.map.setView([lat, lng], 12);
+                });
+                resultsContainer.appendChild(link);
+            }
+            
+            // Show results
+            resultsContainer.style.display = 'block';
+        });
+    };
+    
+    // Store the control reference
+    if (type === 'pickup') {
+        BookingState.pickupGeocoder = control;
+    } else {
+        BookingState.dropoffGeocoder = control;
     }
     
-    var lat = place.geometry.location.lat();
-    var lng = place.geometry.location.lng();
-    var address = place.formatted_address || place.name || 'Selected Location';
-    
-    setLocation(type, { lat: lat, lng: lng }, address);
+    // Add to map
+    control.addTo(BookingState.map);
 }
 
+/* =====================================================================
+   LOCATION FUNCTIONS
+   ===================================================================== */
 function setLocation(type, coords, address) {
     var lat = coords.lat;
     var lng = coords.lng;
-    var pos = new google.maps.LatLng(lat, lng);
+    
+    // Create custom icon
+    var icon = L.divIcon({
+        className: type === 'pickup' ? 'custom-marker-pickup' : 'custom-marker-dropoff',
+        iconSize: [24, 24],
+        iconAnchor: [12, 12]
+    });
     
     if (type === 'pickup') {
         if (BookingState.pickupMarker) {
-            BookingState.pickupMarker.setPosition(pos);
+            BookingState.pickupMarker.setLatLng([lat, lng]);
         } else {
-            BookingState.pickupMarker = new google.maps.Marker({
-                position: pos,
-                map: BookingState.map,
-                label: { text: 'P', color: 'white', fontWeight: 'bold' },
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#28A745',
-                    fillOpacity: 1,
-                    strokeColor: '#fff',
-                    strokeWeight: 2,
-                    scale: 12
-                },
-                title: 'Pickup Location'
+            BookingState.pickupMarker = L.marker([lat, lng], {
+                icon: icon,
+                draggable: true
+            }).addTo(BookingState.map);
+            
+            // Handle drag end
+            BookingState.pickupMarker.on('dragend', function(e) {
+                var pos = e.target.getLatLng();
+                var newCoords = { lat: pos.lat, lng: pos.lng };
+                // Reverse geocode
+                fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + pos.lat + '&lon=' + pos.lng + '&zoom=18&addressdetails=1')
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        var newAddress = data.display_name || 'Selected Location';
+                        BookingState.pickupAddress = newAddress;
+                        // Update the input if we have a reference
+                        var input = document.querySelector('#pickupGeocoder input');
+                        if (input) input.value = newAddress;
+                    })
+                    .catch(function() {
+                        BookingState.pickupAddress = 'Selected Location';
+                    });
+                BookingState.pickupCoords = newCoords;
+                calculatePrice();
             });
         }
         BookingState.pickupCoords = { lat: lat, lng: lng };
         BookingState.pickupAddress = address;
-        document.getElementById('pickupSearch').value = address;
+        // Update the input
+        var input = document.querySelector('#pickupGeocoder input');
+        if (input) input.value = address;
     } else {
         if (BookingState.dropoffMarker) {
-            BookingState.dropoffMarker.setPosition(pos);
+            BookingState.dropoffMarker.setLatLng([lat, lng]);
         } else {
-            BookingState.dropoffMarker = new google.maps.Marker({
-                position: pos,
-                map: BookingState.map,
-                label: { text: 'D', color: 'white', fontWeight: 'bold' },
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#DC3545',
-                    fillOpacity: 1,
-                    strokeColor: '#fff',
-                    strokeWeight: 2,
-                    scale: 12
-                },
-                title: 'Drop-off Location'
+            BookingState.dropoffMarker = L.marker([lat, lng], {
+                icon: icon,
+                draggable: true
+            }).addTo(BookingState.map);
+            
+            // Handle drag end
+            BookingState.dropoffMarker.on('dragend', function(e) {
+                var pos = e.target.getLatLng();
+                var newCoords = { lat: pos.lat, lng: pos.lng };
+                fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat=' + pos.lat + '&lon=' + pos.lng + '&zoom=18&addressdetails=1')
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        var newAddress = data.display_name || 'Selected Location';
+                        BookingState.dropoffAddress = newAddress;
+                        var input = document.querySelector('#dropoffGeocoder input');
+                        if (input) input.value = newAddress;
+                    })
+                    .catch(function() {
+                        BookingState.dropoffAddress = 'Selected Location';
+                    });
+                BookingState.dropoffCoords = newCoords;
+                calculatePrice();
             });
         }
         BookingState.dropoffCoords = { lat: lat, lng: lng };
         BookingState.dropoffAddress = address;
-        document.getElementById('dropoffSearch').value = address;
+        var input = document.querySelector('#dropoffGeocoder input');
+        if (input) input.value = address;
     }
     
     // Fit bounds to show both markers
-    var bounds = new google.maps.LatLngBounds();
-    if (BookingState.pickupMarker) bounds.extend(BookingState.pickupMarker.getPosition());
-    if (BookingState.dropoffMarker) bounds.extend(BookingState.dropoffMarker.getPosition());
+    var bounds = [];
+    if (BookingState.pickupMarker) bounds.push(BookingState.pickupMarker.getLatLng());
+    if (BookingState.dropoffMarker) bounds.push(BookingState.dropoffMarker.getLatLng());
     
-    if (BookingState.pickupMarker && BookingState.dropoffMarker) {
-        BookingState.map.fitBounds(bounds, { padding: 50 });
+    if (bounds.length === 2) {
+        var group = L.featureGroup([
+            BookingState.pickupMarker,
+            BookingState.dropoffMarker
+        ]);
+        BookingState.map.fitBounds(group.getBounds(), { padding: [50, 50] });
         calculatePrice();
-    } else if (BookingState.pickupMarker) {
-        BookingState.map.setCenter(BookingState.pickupMarker.getPosition());
-        BookingState.map.setZoom(12);
+    } else if (bounds.length === 1) {
+        BookingState.map.setView([lat, lng], 12);
     }
 }
 
 function clearAllLocations() {
     if (BookingState.pickupMarker) {
-        BookingState.pickupMarker.setMap(null);
+        BookingState.pickupMarker.remove();
         BookingState.pickupMarker = null;
     }
     if (BookingState.dropoffMarker) {
-        BookingState.dropoffMarker.setMap(null);
+        BookingState.dropoffMarker.remove();
         BookingState.dropoffMarker = null;
     }
-    if (BookingState.directionRenderer) {
-        BookingState.directionRenderer.setMap(null);
-        BookingState.directionRenderer = null;
+    if (BookingState.routeLine) {
+        BookingState.routeLine.remove();
+        BookingState.routeLine = null;
     }
+    
     BookingState.pickupCoords = null;
     BookingState.dropoffCoords = null;
     BookingState.pickupAddress = null;
     BookingState.dropoffAddress = null;
     BookingState.distance = 0;
     
-    document.getElementById('pickupSearch').value = '';
-    document.getElementById('dropoffSearch').value = '';
+    var pickupInput = document.querySelector('#pickupGeocoder input');
+    var dropoffInput = document.querySelector('#dropoffGeocoder input');
+    if (pickupInput) pickupInput.value = '';
+    if (dropoffInput) dropoffInput.value = '';
+    
     document.getElementById('distanceValue').textContent = '— km';
     document.getElementById('estimatedPriceValue').textContent = 'R0.00';
     document.getElementById('distanceDisplay').textContent = '— km';
@@ -366,47 +457,26 @@ function calculatePrice() {
     
     document.getElementById('distanceValue').textContent = distance.toFixed(1) + ' km';
     
-    // Draw route on map
+    // Draw route
     drawRoute();
 }
 
 function drawRoute() {
     if (!BookingState.pickupCoords || !BookingState.dropoffCoords) return;
     
-    if (BookingState.directionRenderer) {
-        BookingState.directionRenderer.setMap(null);
+    if (BookingState.routeLine) {
+        BookingState.routeLine.remove();
     }
     
-    BookingState.directionRenderer = new google.maps.DirectionsRenderer({
-        suppressMarkers: true,
-        polylineOptions: {
-            strokeColor: '#F5A623',
-            strokeWeight: 4,
-            strokeOpacity: 0.8
-        }
-    });
-    BookingState.directionRenderer.setMap(BookingState.map);
+    var pickupLatLng = [BookingState.pickupCoords.lat, BookingState.pickupCoords.lng];
+    var dropoffLatLng = [BookingState.dropoffCoords.lat, BookingState.dropoffCoords.lng];
     
-    var request = {
-        origin: new google.maps.LatLng(BookingState.pickupCoords.lat, BookingState.pickupCoords.lng),
-        destination: new google.maps.LatLng(BookingState.dropoffCoords.lat, BookingState.dropoffCoords.lng),
-        travelMode: google.maps.TravelMode.DRIVING
-    };
-    
-    var directionsService = new google.maps.DirectionsService();
-    directionsService.route(request, function(response, status) {
-        if (status === 'OK') {
-            BookingState.directionRenderer.setDirections(response);
-            
-            // Get actual driving distance
-            if (response.routes[0] && response.routes[0].legs[0]) {
-                var drivingDistance = response.routes[0].legs[0].distance.value / 1000;
-                BookingState.distance = drivingDistance;
-                updatePriceSummary();
-                document.getElementById('distanceValue').textContent = drivingDistance.toFixed(1) + ' km';
-            }
-        }
-    });
+    BookingState.routeLine = L.polyline([pickupLatLng, dropoffLatLng], {
+        color: '#F5A623',
+        weight: 4,
+        dashArray: '10 8',
+        opacity: 0.8
+    }).addTo(BookingState.map);
 }
 
 /* =====================================================================
@@ -633,7 +703,6 @@ function renderTimeSlots(slots) {
    UI HANDLERS
    ===================================================================== */
 function setupUIHandlers() {
-    // Route filter
     var chips = document.querySelectorAll('.route-chip');
     for (var i = 0; i < chips.length; i++) {
         chips[i].onclick = async function() {
@@ -650,13 +719,11 @@ function setupUIHandlers() {
         };
     }
 
-    // Date picker
     var dateInput = document.getElementById('tripDate');
     var today = new Date().toISOString().split('T')[0];
     dateInput.setAttribute('min', today);
     dateInput.value = today;
 
-    // Seat controls
     document.getElementById('seatMinus').onclick = function() {
         if (BookingState.seats > 1) { 
             BookingState.seats--; 
@@ -675,7 +742,6 @@ function setupUIHandlers() {
         }
     };
 
-    // Payment buttons
     document.getElementById('payWithCardBtn').onclick = initiatePaystackPayment;
     document.getElementById('payWithWhatsAppBtn').onclick = confirmBookingViaWhatsApp;
 }
@@ -941,6 +1007,3 @@ function validateBooking() {
 
     return true;
 }
-
-// Make initMap globally accessible for Google Maps callback
-window.initMap = initMap;
