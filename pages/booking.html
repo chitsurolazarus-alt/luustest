@@ -6,11 +6,31 @@
 <title>Book a Trip | Luu Travels & Logistics</title>
 <link rel="icon" type="image/png" href="../assets/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<!-- Google Maps API with Places -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDx6kS9mBkE0_pz22MlJkQAWXg3Bh_p67k&libraries=places&callback=initMap" async defer></script>
 <link rel="stylesheet" href="../css/style.css">
 <link rel="stylesheet" href="../css/booking.css">
 <!-- Paystack Script -->
 <script src="https://js.paystack.co/v1/inline.js"></script>
+<style>
+    .pac-container {
+        z-index: 1000 !important;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+    .pac-item {
+        padding: 10px 15px;
+        font-size: 0.9rem;
+        cursor: pointer;
+    }
+    .pac-item:hover {
+        background: var(--gray-100);
+    }
+    .pac-item-query {
+        font-weight: 600;
+        color: var(--primary);
+    }
+</style>
 </head>
 <body class="booking-page">
 
@@ -54,24 +74,31 @@
 </header>
 
 <div class="booking-layout">
+    <!-- MAP PANEL - Now using Google Maps -->
     <div class="map-panel">
         <div class="map-panel-header">
-            <h3>Set Your Locations</h3>
-            <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary);" id="clearMapBtn">Clear</button>
+            <h3>📍 Set Your Locations</h3>
+            <button class="btn btn-outline btn-sm" style="color:var(--primary); border-color:var(--primary);" id="clearMapBtn">Clear All</button>
         </div>
+        
+        <!-- Address inputs with Google Places Autocomplete -->
         <div class="address-search">
             <div class="address-search-row">
                 <span class="address-dot address-dot-green"></span>
-                <input type="text" id="pickupSearch" placeholder="Type your pickup address (e.g. Boksburg, Gauteng)">
-                <button type="button" class="btn btn-navy btn-sm" id="pickupSearchBtn">Find</button>
+                <input type="text" id="pickupSearch" placeholder="Type your pickup address..." autocomplete="off">
+                <button type="button" class="btn btn-navy btn-sm" id="useCurrentLocationBtn" title="Use my current location">
+                    📍
+                </button>
             </div>
             <div class="address-search-row">
                 <span class="address-dot address-dot-red"></span>
-                <input type="text" id="dropoffSearch" placeholder="Type your drop-off address (e.g. Polokwane, Limpopo)">
-                <button type="button" class="btn btn-navy btn-sm" id="dropoffSearchBtn">Find</button>
+                <input type="text" id="dropoffSearch" placeholder="Type your drop-off address..." autocomplete="off">
             </div>
         </div>
-        <div id="booking-map"></div>
+        
+        <!-- Google Map -->
+        <div id="google-map" style="height:400px; width:100%;"></div>
+        
         <div class="map-info-bar">
             <div class="info-item">
                 <div class="info-label">Distance</div>
@@ -82,7 +109,11 @@
                 <div class="info-value" id="estimatedPriceValue">R0.00</div>
             </div>
         </div>
-        <p style="padding:0 20px 16px; font-size:0.82rem; color:var(--gray-600);">Type an address above and click <strong>Find</strong>, or click directly on the map — first click sets <strong style="color:var(--success)">pickup</strong> (green), second sets <strong style="color:var(--danger)">drop-off</strong> (red).</p>
+        <p style="padding:0 20px 16px; font-size:0.82rem; color:var(--gray-600);">
+            Start typing your address and select from the suggestions. 
+            <strong style="color:var(--success);">Green</strong> is pickup, 
+            <strong style="color:var(--danger);">red</strong> is drop-off.
+        </p>
     </div>
 
     <div class="booking-panel">
@@ -173,7 +204,7 @@
     </div>
 </div>
 
-<!-- ADS BANNER - LARGER SIZE -->
+<!-- ADS BANNER -->
 <section class="section" id="ads-section" style="padding:40px 0 20px; background:var(--gray-100);">
     <div class="container">
         <div class="section-header" style="margin-bottom:24px;">
@@ -210,11 +241,9 @@
     </div>
 </footer>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
-<script src="../js/map.js"></script>
 <script src="../js/booking.js"></script>
 </body>
 </html>
