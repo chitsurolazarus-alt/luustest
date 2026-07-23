@@ -1,0 +1,49 @@
+# ============================================================
+# LUU TRAVELS & LOGISTICS - ROBOTS.TXT
+# ============================================================
+
+User-agent: *
+Allow: /
+
+# ============================================================
+# DISALLOW - Admin and Private Pages
+# ============================================================
+Disallow: /pages/admin-*
+Disallow: /pages/driver-*
+Disallow: /pages/dashboard.html
+Disallow: /pages/profile.html
+Disallow: /pages/booking.html
+Disallow: /pages/login.html
+Disallow: /pages/register.html
+Disallow: /pages/forgot-password.html
+Disallow: /pages/reset-password.html
+Disallow: /assets/
+Disallow: /css/
+Disallow: /js/
+Disallow: /supabase/
+
+# ============================================================
+# ALLOW - Public Pages
+# ============================================================
+Allow: /$
+Allow: /index.html
+Allow: /pages/terms.html
+Allow: /pages/privacy.html
+Allow: /pages/cancellation.html
+Allow: /pages/refund.html
+Allow: /pages/pricing.html
+
+# ============================================================
+# SITEMAP LOCATION
+# ============================================================
+Sitemap: https://www.luutravels.co.za/sitemap.xml
+
+# ============================================================
+# CRAWL DELAY - Be respectful to the server
+# ============================================================
+Crawl-delay: 2
+
+# ============================================================
+# HOST - Primary domain
+# ============================================================
+Host: https://www.luutravels.co.za
