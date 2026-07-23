@@ -1,1 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pricing | Luu Travels & Logistics</title>
+<link rel="icon" type="image/png" href="../assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+    .policy-page {
+        background: var(--gray-100);
+        min-height: 100vh;
+        padding: 40px 0 60px;
+    }
+    .policy-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+    .policy-card {
+        background: var(--secondary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 48px;
+    }
+    .policy-card h1 {
+        font-size: 2rem;
+        margin-bottom: 8px;
+        color: var(--primary);
+    }
+    .policy-card .last-updated {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+        margin-bottom: 32px;
+        border-bottom: 1px solid var(--gray-200);
+        padding-bottom: 16px;
+    }
+    .policy-card h2 {
+        font-size: 1.3rem;
+        color: var(--primary);
+        margin: 28px 0 12px;
+        padding-top: 8px;
+        border-top: 1px solid var(--gray-100);
+    }
+    .policy-card h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+    }
+    .policy-card h3 {
+        font-size: 1.05rem;
+        color: var(--primary);
+        margin: 20px 0 10px;
+    }
+    .policy-card p {
+        color: var(--gray-700);
+        line-height: 1.8;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+    }
+    .policy-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 16px;
+    }
+    .policy-card ul li {
+        padding: 8px 0 8px 28px;
+        position: relative;
+        color: var(--gray-700);
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+    .policy-card ul li::before {
+        content: "•";
+        position: absolute;
+        left: 4px;
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    .policy-card .highlight-box {
+        background: var(--gray-100);
+        border-left: 4px solid var(--accent);
+        padding: 16px 20px;
+        border-radius: 0 8px 8px 0;
+        margin: 16px 0;
+    }
+    .policy-card .highlight-box p {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+    }
+    .policy-card .table-wrap {
+        overflow-x: auto;
+        margin: 16px 0 24px;
+    }
+    .policy-card table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+    }
+    .policy-card table th {
+        background: var(--primary);
+        color: var(--secondary);
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+    }
+    .policy-card table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--gray-200);
+        color: var(--gray-700);
+    }
+    .policy-card table tr:nth-child(even) {
+        background: var(--gray-50);
+    }
+    .policy-card table tr:hover {
+        background: var(--gray-100);
+    }
+    .policy-back {
+        display: inline-block;
+        margin-top: 24px;
+        color: var(--accent-dark);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .policy-back:hover {
+        text-decoration: underline;
+    }
+    @media (max-width: 768px) {
+        .policy-card {
+            padding: 24px;
+        }
+        .policy-card h1 {
+            font-size: 1.5rem;
+        }
+        .policy-card table {
+            font-size: 0.85rem;
+        }
+        .policy-card table th,
+        .policy-card table td {
+            padding: 8px 10px;
+        }
+    }
+</style>
+</head>
+<body>
 
+<nav class="navbar">
+    <div class="container">
+        <a href="../index.html" class="brand">
+            <img src="../assets/logo.png" alt="Luu Travels logo">
+            <span class="brand-name">Luu Travels <span>& Logistics</span></span>
+        </a>
+        <div class="nav-actions">
+            <a href="login.html" class="btn btn-outline btn-sm" style="color:var(--secondary); border-color:var(--secondary);">Login</a>
+            <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+        </div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="../index.html">Home</a>
+        <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+        <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+    </div>
+</nav>
+
+<div class="policy-page">
+    <div class="policy-container">
+        <div class="policy-card">
+            <h1>💰 Pricing Structure</h1>
+            <div class="last-updated">Last Updated: 15 July 2026</div>
+
+            <p>At Luu Travels & Logistics, we believe in transparent and fair pricing. Below is a detailed breakdown of our pricing structure.</p>
+
+            <h2>1. Base Fare</h2>
+            <ul>
+                <li><strong>Rate per Kilometer:</strong> R2.11 per km</li>
+                <li><strong>Minimum Fare:</strong> R50.00 per trip</li>
+                <li><strong>Distance Calculation:</strong> Distance is calculated using the actual driving route (not straight-line distance) via OpenRouteService.</li>
+                <li><strong>Fare Formula:</strong> Distance (km) × R2.11 × Number of Passengers</li>
+            </ul>
+
+            <div class="highlight-box">
+                <p><strong>📏 Distance Calculation:</strong> We use real driving routes to calculate distance, ensuring accurate and fair pricing. The route is calculated using OpenRouteService, which provides actual road distance.</p>
+            </div>
+
+            <h2>2. Surcharges</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Service</th>
+                            <th>Surcharge</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Public Holidays</td>
+                            <td>15%</td>
+                            <td>Applied on all public holidays in South Africa</td>
+                        </tr>
+                        <tr>
+                            <td>Night Travel (22:00 - 05:00)</td>
+                            <td>10%</td>
+                            <td>Trips that start or end during night hours</td>
+                        </tr>
+                        <tr>
+                            <td>Extra Luggage (per additional bag)</td>
+                            <td>R50.00</td>
+                            <td>Beyond the standard allowance of 2 bags per passenger</td>
+                        </tr>
+                        <tr>
+                            <td>Waiting Time (after 15 minutes)</td>
+                            <td>R2.50/min</td>
+                            <td>Free waiting for first 15 minutes</td>
+                        </tr>
+                        <tr>
+                            <td>Child Seat</td>
+                            <td>Free</td>
+                            <td>Available upon request</td>
+                        </tr>
+                        <tr>
+                            <td>Group Booking (4+ passengers)</td>
+                            <td>0%</td>
+                            <td>No additional surcharge</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>3. Payment Methods</h2>
+            <ul>
+                <li><strong>Card Payments:</strong> Processed securely through Paystack. Accepted cards: Visa, Mastercard, American Express.</li>
+                <li><strong>Cash Payments:</strong> Pay the driver directly in cash. Please have the exact amount ready.</li>
+                <li><strong>EFT Payments:</strong> Available for corporate clients (contact us for details).</li>
+                <li><strong>Wallet Credits:</strong> Use credits from previous refunds to pay for bookings.</li>
+                <li>All prices are in South African Rand (ZAR).</li>
+            </ul>
+
+            <div class="highlight-box">
+                <p><strong>💳 Secure Payments:</strong> All card payments are processed through Paystack, a PCI-DSS compliant payment gateway. Your payment information is encrypted and never stored on our servers.</p>
+            </div>
+
+            <h2>4. Example Fares</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Route</th>
+                            <th>Distance</th>
+                            <th>Passengers</th>
+                            <th>Base Fare</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Boksburg → Polokwane</td>
+                            <td>320 km</td>
+                            <td>1</td>
+                            <td>R675.20</td>
+                            <td><strong>R675.20</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Johannesburg → Polokwane</td>
+                            <td>330 km</td>
+                            <td>2</td>
+                            <td>R696.30</td>
+                            <td><strong>R1,392.60</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Pretoria → Tzaneen</td>
+                            <td>280 km</td>
+                            <td>1</td>
+                            <td>R590.80</td>
+                            <td><strong>R590.80</strong></td>
+                        </tr>
+                        <tr>
+                            <td>Boksburg → Seshego</td>
+                            <td>310 km</td>
+                            <td>3</td>
+                            <td>R654.10</td>
+                            <td><strong>R1,962.30</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2>5. Discounts and Promotions</h2>
+            <ul>
+                <li><strong>Promo Codes:</strong> Enter a valid promo code at checkout to receive a discount.</li>
+                <li><strong>Referral Program:</strong> Refer a friend and both get 10% off your next trip.</li>
+                <li><strong>Corporate Accounts:</strong> Corporate clients receive volume discounts. Contact us for details.</li>
+                <li><strong>Student Discount:</strong> 5% off for students with valid student ID.</li>
+                <li><strong>Senior Citizen Discount:</strong> 5% off for seniors aged 60 and above.</li>
+                <li>Discounts cannot be combined unless specified.</li>
+            </ul>
+
+            <h2>6. Corporate and Bulk Bookings</h2>
+            <ul>
+                <li><strong>Volume Discounts:</strong> For corporate clients with frequent bookings, we offer volume discounts.</li>
+                <li><strong>Monthly Invoicing:</strong> Available for corporate clients with a signed agreement.</li>
+                <li><strong>Dedicated Account Manager:</strong> Corporate clients receive a dedicated account manager.</li>
+                <li><strong>Customized Solutions:</strong> We can tailor our services to meet your specific needs.</li>
+                <li>Contact us at LuuTravels611@gmail.com for a corporate quotation.</li>
+            </ul>
+
+            <h2>7. Price Changes</h2>
+            <ul>
+                <li>We reserve the right to adjust prices at any time.</li>
+                <li>Price changes will be communicated via email or on our website.</li>
+                <li>Bookings made before a price change will be honored at the original price.</li>
+                <li>All prices are subject to change without prior notice.</li>
+            </ul>
+
+            <h2>8. Contact Us</h2>
+            <ul>
+                <li><strong>Company:</strong> Luu Travels & Logistics (Pty) Ltd</li>
+                <li><strong>Email:</strong> LuuTravels611@gmail.com</li>
+                <li><strong>Phone:</strong> 076 845 7061</li>
+                <li><strong>WhatsApp:</strong> 076 845 7061</li>
+                <li><strong>Address:</strong> Windmill Park Ext 32, Boksburg, Gauteng, South Africa</li>
+                <li><strong>Business Hours:</strong> Monday to Friday, 08:00 - 17:00</li>
+            </ul>
+
+            <a href="../index.html" class="policy-back">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    var hamburgerBtn = document.getElementById('hamburgerBtn');
+    var mobileMenu = document.getElementById('mobileMenu');
+    if (hamburgerBtn && mobileMenu) {
+        hamburgerBtn.addEventListener('click', function() {
+            mobileMenu.classList.toggle('open');
+        });
+        mobileMenu.querySelectorAll('a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                mobileMenu.classList.remove('open');
+            });
+        });
+    }
+</script>
+
+</body>
+</html>
