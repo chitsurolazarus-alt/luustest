@@ -20,9 +20,10 @@ var APP_CONFIG = {
     maxSeats: 9,
     routes: ['Gauteng-Limpopo', 'Limpopo-Gauteng'],
     currency: 'R',
-    paystackPublicKey: 'pk_test_d2da5d0e56a7fa1e7c308f9d2e8bff76b970e4d7',
-    paystackSecretKey: 'sk_test_72c3b06c8ef3be59dbcc18d74bdc1479642fba39',
-    // OpenRouteService API Key
+    // API Keys
+    paystackPublicKey: 'pk_live_4ab34307cf765fd3089d40ee4474c23deb3f7ddd',
+    paystackSecretKey: 'sk_live_efb198fb83a4d79843f22c580f810df32e85046d',
+   //API Key
     openRouteServiceKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjlhOTc0MzI1Yzg2YzQ0OTI5ZDJiOWZjOWM1MjJlMDk1IiwiaCI6Im11cm11cjY0In0='
 };
 
