@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cancellation Policy | Luu Travels & Logistics</title>
+<link rel="icon" type="image/png" href="../assets/logo.png">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+    .policy-page {
+        background: var(--gray-100);
+        min-height: 100vh;
+        padding: 40px 0 60px;
+    }
+    .policy-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 24px;
+    }
+    .policy-card {
+        background: var(--secondary);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        padding: 48px;
+    }
+    .policy-card h1 {
+        font-size: 2rem;
+        margin-bottom: 8px;
+        color: var(--primary);
+    }
+    .policy-card .last-updated {
+        color: var(--gray-600);
+        font-size: 0.85rem;
+        margin-bottom: 32px;
+        border-bottom: 1px solid var(--gray-200);
+        padding-bottom: 16px;
+    }
+    .policy-card h2 {
+        font-size: 1.3rem;
+        color: var(--primary);
+        margin: 28px 0 12px;
+        padding-top: 8px;
+        border-top: 1px solid var(--gray-100);
+    }
+    .policy-card h2:first-of-type {
+        border-top: none;
+        padding-top: 0;
+        margin-top: 0;
+    }
+    .policy-card h3 {
+        font-size: 1.05rem;
+        color: var(--primary);
+        margin: 20px 0 10px;
+    }
+    .policy-card p {
+        color: var(--gray-700);
+        line-height: 1.8;
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+    }
+    .policy-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 16px;
+    }
+    .policy-card ul li {
+        padding: 8px 0 8px 28px;
+        position: relative;
+        color: var(--gray-700);
+        line-height: 1.6;
+        font-size: 0.95rem;
+    }
+    .policy-card ul li::before {
+        content: "•";
+        position: absolute;
+        left: 4px;
+        color: var(--accent);
+        font-weight: 700;
+        font-size: 1.2rem;
+    }
+    .policy-card .highlight-box {
+        background: var(--gray-100);
+        border-left: 4px solid var(--accent);
+        padding: 16px 20px;
+        border-radius: 0 8px 8px 0;
+        margin: 16px 0;
+    }
+    .policy-card .highlight-box p {
+        margin-bottom: 0;
+        font-size: 0.95rem;
+    }
+    .policy-card .table-wrap {
+        overflow-x: auto;
+        margin: 16px 0 24px;
+    }
+    .policy-card table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+    }
+    .policy-card table th {
+        background: var(--primary);
+        color: var(--secondary);
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+    }
+    .policy-card table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--gray-200);
+        color: var(--gray-700);
+    }
+    .policy-card table tr:nth-child(even) {
+        background: var(--gray-50);
+    }
+    .policy-card table tr:hover {
+        background: var(--gray-100);
+    }
+    .policy-back {
+        display: inline-block;
+        margin-top: 24px;
+        color: var(--accent-dark);
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .policy-back:hover {
+        text-decoration: underline;
+    }
+    @media (max-width: 768px) {
+        .policy-card {
+            padding: 24px;
+        }
+        .policy-card h1 {
+            font-size: 1.5rem;
+        }
+        .policy-card table {
+            font-size: 0.85rem;
+        }
+        .policy-card table th,
+        .policy-card table td {
+            padding: 8px 10px;
+        }
+    }
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+    <div class="container">
+        <a href="../index.html" class="brand">
+            <img src="../assets/logo.png" alt="Luu Travels logo">
+            <span class="brand-name">Luu Travels <span>& Logistics</span></span>
+        </a>
+        <div class="nav-actions">
+            <a href="login.html" class="btn btn-outline btn-sm" style="color:var(--secondary); border-color:var(--secondary);">Login</a>
+            <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+        </div>
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+        <a href="../index.html">Home</a>
+        <a href="login.html" class="btn btn-outline btn-sm">Login</a>
+        <a href="register.html" class="btn btn-primary btn-sm">Register</a>
+    </div>
+</nav>
+
+<div class="policy-page">
+    <div class="policy-container">
+        <div class="policy-card">
+            <h1>❌ Cancellation Policy</h1>
+            <div class="last-updated">Last Updated: 15 July 2026</div>
+
+            <p>At Luu Travels & Logistics, we understand that plans can change. This Cancellation Policy outlines the terms and conditions for canceling your booking with us. Please read it carefully before making a reservation.</p>
+
+            <h2>1. Cancellation Timeline and Fees</h2>
+            <p>The following cancellation fees apply based on the time of cancellation relative to your scheduled departure time:</p>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Cancellation Time</th>
+                            <th>Cancellation Fee</th>
+                            <th>Refund Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>More than 24 hours before departure</td>
+                            <td>0%</td>
+                            <td>100% Full Refund</td>
+                        </tr>
+                        <tr>
+                            <td>12-24 hours before departure</td>
+                            <td>50%</td>
+                            <td>50% Partial Refund</td>
+                        </tr>
+                        <tr>
+                            <td>Less than 12 hours before departure</td>
+                            <td>100%</td>
+                            <td>0% No Refund</td>
+                        </tr>
+                        <tr>
+                            <td>No-Show (Did not arrive)</td>
+                            <td>100%</td>
+                            <td>0% No Refund</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="highlight-box">
+                <p><strong>⏰ Important:</strong> All cancellation times are calculated based on the scheduled departure time of your trip. Please ensure you cancel at least 24 hours in advance to receive a full refund.</p>
+            </div>
+
+            <h2>2. How to Cancel a Booking</h2>
+            <ul>
+                <li><strong>Via Dashboard:</strong> Log in to your account, go to "My Bookings," select the booking, and click "Cancel Trip."</li>
+                <li><strong>Via WhatsApp:</strong> Send a cancellation request to our WhatsApp number: 076 845 7061.</li>
+                <li><strong>Via Email:</strong> Send a cancellation request to LuuTravels611@gmail.com with your booking reference number.</li>
+                <li><strong>Via Phone:</strong> Call us at 076 845 7061 during business hours.</li>
+                <li>Please have your booking reference number ready when requesting a cancellation.</li>
+                <li>Cancellation requests made via WhatsApp or email must be confirmed by our team.</li>
+            </ul>
+
+            <h2>3. Refund Processing</h2>
+            <ul>
+                <li><strong>Processing Time:</strong> Refunds are processed within 5-7 business days.</li>
+                <li><strong>Payment Method:</strong> Refunds are issued to the original payment method used for the booking.</li>
+                <li><strong>Cash Payments:</strong> For cash payments, refunds will be processed via EFT to your bank account.</li>
+                <li><strong>Card Payments:</strong> For card payments, refunds are processed through Paystack and will reflect in your account within 5-7 business days.</li>
+                <li><strong>Promo Codes:</strong> Discounts applied via promo codes are not refundable as cash.</li>
+                <li><strong>Partial Refunds:</strong> If you cancel within 12-24 hours, only 50% of the trip fare will be refunded.</li>
+            </ul>
+
+            <h2>4. Cancellation by Luu Travels & Logistics</h2>
+            <ul>
+                <li><strong>Driver Unavailability:</strong> If we are unable to assign a driver to your trip, you will receive a full refund.</li>
+                <li><strong>Vehicle Breakdown:</strong> If the assigned vehicle experiences a breakdown, we will attempt to provide an alternative vehicle. If unavailable, you will receive a full refund.</li>
+                <li><strong>Extreme Weather:</strong> In the event of severe weather conditions that make travel unsafe, we may cancel the trip and provide a full refund.</li>
+                <li><strong>Emergency Situations:</strong> In the event of emergencies, we reserve the right to cancel trips and provide full refunds.</li>
+                <li>We will notify you as soon as possible if we need to cancel your trip.</li>
+                <li>Full refunds will be processed within 48 hours of cancellation by us.</li>
+            </ul>
+
+            <h2>5. No-Show Policy</h2>
+            <ul>
+                <li>A "no-show" is defined as not arriving at the pickup location within 15 minutes of the scheduled departure time.</li>
+                <li>If you are a no-show, the full trip fare will be charged and no refund will be provided.</li>
+                <li>If you are running late, please contact us immediately at 076 845 7061.</li>
+                <li>We may wait up to 15 minutes after the scheduled departure time for late arrivals.</li>
+                <li>After 15 minutes, the driver may depart and the trip will be marked as a no-show.</li>
+                <li>Repeated no-shows may result in account suspension.</li>
+            </ul>
+
+            <div class="highlight-box">
+                <p><strong>⏰ Late Arrival Notice:</strong> If you are running late, please contact us immediately at 076 845 7061. We will do our best to accommodate you, but cannot guarantee that the driver will wait beyond 15 minutes.</p>
+            </div>
+
+            <h2>6. Modifications and Changes</h2>
+            <ul>
+                <li><strong>Time Changes:</strong> You may request a change to your departure time up to 12 hours before departure at no additional cost.</li>
+                <li><strong>Route Changes:</strong> You may request a change to your pickup or drop-off location up to 6 hours before departure.</li>
+                <li><strong>Passenger Changes:</strong> You may update the number of passengers up to 6 hours before departure.</li>
+                <li><strong>Additional Fees:</strong> Changes made within 6 hours of departure may incur additional fees.</li>
+                <li>All changes are subject to availability and driver confirmation.</li>
+                <li>Changes must be requested through your dashboard or by contacting us directly.</li>
+            </ul>
+
+            <h2>7. Group Bookings</h2>
+            <ul>
+                <li><strong>Group Bookings:</strong> For group bookings of 4 or more passengers, a 72-hour cancellation notice is required for a full refund.</li>
+                <li><strong>Group Cancellation Fees:</strong> Cancellations made within 72 hours will incur a 50% cancellation fee.</li>
+                <li><strong>Group No-Show:</strong> For group bookings, the no-show policy applies to each passenger individually.</li>
+                <li><strong>Group Changes:</strong> Changes to group bookings must be communicated at least 48 hours in advance.</li>
+                <li>Group bookings require a 50% deposit at the time of booking.</li>
+            </ul>
+
+            <h2>8. Special Circumstances</h2>
+            <ul>
+                <li><strong>Medical Emergencies:</strong> If you or a passenger experience a medical emergency, please contact us immediately. We will review cancellation fees on a case-by-case basis.</li>
+                <li><strong>Flight Delays:</strong> If you are booking a shuttle to the airport and your flight is delayed, please inform us as soon as possible. We will try to accommodate the new time.</li>
+                <li><strong>Vehicle Breakdown:</strong> If the driver's vehicle breaks down en route, we will attempt to provide an alternative vehicle. If a replacement cannot be arranged, you will receive a full refund.</li>
+                <li><strong>Force Majeure:</strong> In the event of natural disasters, strikes, or other unforeseen events beyond our control, we will provide full refunds.</li>
+            </ul>
+
+            <h2>9. Refund Exceptions</h2>
+            <ul>
+                <li>Refunds are not provided for cancellations made due to personal reasons within 12 hours of departure.</li>
+                <li>Refunds are not provided for no-shows.</li>
+                <li>Refunds are not provided for trips that have already commenced.</li>
+                <li>Refunds are not provided for promotional or discounted bookings unless specified.</li>
+                <li>Refunds are not provided for dissatisfaction with weather or traffic conditions.</li>
+                <li>Refunds are not provided for dissatisfaction with the driver's behavior unless reported and investigated.</li>
+            </ul>
+
+            <h2>10. Dispute Resolution</h2>
+            <ul>
+                <li>If you believe a cancellation fee has been applied incorrectly, please contact us at LuuTravels611@gmail.com.</li>
+                <li>We will review your request and respond within 5 business days.</li>
+                <li>If we are unable to resolve the dispute, you may escalate the matter to the relevant consumer protection authority.</li>
+                <li>All disputes are governed by the laws of the Republic of South Africa.</li>
+            </ul>
+
+            <h2>11. Contact Us</h2>
+            <ul>
+                <li><strong>Company:</strong> Luu Travels & Logistics (Pty) Ltd</li>
+                <li><strong>Email:</strong> LuuTravels611@gmail.com</li>
+                <li><strong>Phone:</strong> 076 845 7061</li>
+                <li><strong>WhatsApp:</strong> 076 845 7061</li>
+                <li><strong>Address:</strong> Windmill Park Ext 32, Boksburg, Gauteng, South Africa</li>
+                <li><strong>Business Hours:</strong> Monday to Friday, 08:00 - 17:00</li>
+            </ul>
+
+            <a href="../index.html" class="policy-back">← Back to Home</a>
+        </div>
+    </div>
+</div>
+
+<script>
+    var hamburgerBtn = document.getElementById('hamburgerBtn');
+    var mobileMenu = document.getElementById('mobileMenu');
+    if (hamburgerBtn && mobileMenu) {
+        hamburgerBtn.addEventListener('click', function() {
+            mobileMenu.classList.toggle('open');
+        });
+        mobileMenu.querySelectorAll('a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                mobileMenu.classList.remove('open');
+            });
+        });
+    }
+</script>
+
+</body>
+</html>
