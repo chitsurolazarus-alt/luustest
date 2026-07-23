@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+        xmlns:mobile="http://www.google.com/schemas/sitemap-mobile/1.0">
+    
+    <!-- ============================================================ -->
+    <!-- HOMEPAGE & MAIN PAGES                                        -->
+    <!-- ============================================================ -->
+    
+    <!-- Homepage -->
+    <url>
+        <loc>https://www.luutravels.co.za/</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>1.00</priority>
+        <xhtml:link rel="alternate" hreflang="en" href="https://www.luutravels.co.za/"/>
+        <xhtml:link rel="alternate" hreflang="x-default" href="https://www.luutravels.co.za/"/>
+    </url>
+
+    <!-- ============================================================ -->
+    <!-- USER ACCOUNT PAGES                                           -->
+    <!-- ============================================================ -->
+    
+    <!-- Login -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/login.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.90</priority>
+    </url>
+
+    <!-- Register -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/register.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.90</priority>
+    </url>
+
+    <!-- Forgot Password -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/forgot-password.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.60</priority>
+    </url>
+
+    <!-- Reset Password -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/reset-password.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.50</priority>
+    </url>
+
+    <!-- ============================================================ -->
+    <!-- CUSTOMER DASHBOARD PAGES                                     -->
+    <!-- ============================================================ -->
+    
+    <!-- Dashboard -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/dashboard.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+    <!-- Book a Trip -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/booking.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.95</priority>
+    </url>
+
+    <!-- User Profile -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/profile.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <!-- ============================================================ -->
+    <!-- ADMIN PAGES                                                  -->
+    <!-- ============================================================ -->
+    
+    <!-- Admin Login -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/admin-login.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.40</priority>
+    </url>
+
+    <!-- Admin Dashboard -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/admin-dashboard.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.50</priority>
+    </url>
+
+    <!-- ============================================================ -->
+    <!-- DRIVER PAGES                                                 -->
+    <!-- ============================================================ -->
+    
+    <!-- Driver Registration -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/driver-register.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.60</priority>
+    </url>
+
+    <!-- Driver Dashboard -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/driver-dashboard.html</loc>
+        <lastmod>2026-07-23</lastmod>
+        <changefreq>daily</changefreq>
+        <priority>0.50</priority>
+    </url>
+
+    <!-- ============================================================ -->
+    <!-- POLICY PAGES                                                 -->
+    <!-- ============================================================ -->
+    
+    <!-- Terms of Service -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/terms.html</loc>
+        <lastmod>2026-07-15</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <!-- Privacy Policy -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/privacy.html</loc>
+        <lastmod>2026-07-15</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <!-- Cancellation Policy -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/cancellation.html</loc>
+        <lastmod>2026-07-15</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <!-- Refund Policy -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/refund.html</loc>
+        <lastmod>2026-07-15</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.70</priority>
+    </url>
+
+    <!-- Pricing Structure -->
+    <url>
+        <loc>https://www.luutravels.co.za/pages/pricing.html</loc>
+        <lastmod>2026-07-15</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.80</priority>
+    </url>
+
+</urlset>
